@@ -124,4 +124,6 @@ export const sampleResult: RecommendationResult = {
     score: runnerUpScore,
   },
   score: winnerScore,
+  districtUrl:
+    "https://www.district.in/movies/pvr-select-city-walk-saket-new-delhi-in-delhi-ncr-CD1022254",
 };

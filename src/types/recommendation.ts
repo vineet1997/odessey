@@ -52,4 +52,6 @@ export interface RecommendationResult {
    * ResultCard renders no runner-up row in that case rather than fabricate one. */
   runnerUp?: RunnerUp;
   score: ScoreResult;
+  /** The winning venue's real district.in page — where "Book on District" actually goes. */
+  districtUrl: string;
 }

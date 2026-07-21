@@ -33,6 +33,7 @@ async function main() {
     console.log(`  return: [${r.journey.return.status}] ${r.journey.return.headline}`);
     console.log(`  why: ${r.whyLine}`);
     console.log(`  runner-up: ${r.runnerUp ? r.runnerUp.venueName : "(none)"}`);
+    console.log(`  districtUrl: ${r.districtUrl}`);
   }
 }
 

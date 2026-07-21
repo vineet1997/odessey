@@ -196,9 +196,7 @@ export function ResultCard({ result }: ResultCardProps) {
       <div className="mt-auto flex gap-2 pt-2">
         <button
           type="button"
-          onClick={() => {
-            /* stub — District deep link wiring is out of scope for this pass */
-          }}
+          onClick={() => window.open(result.districtUrl, "_blank", "noopener,noreferrer")}
           className="flex min-h-[48px] flex-[2] cursor-pointer items-center justify-center gap-2 rounded-md bg-gold font-mono text-[12px] font-medium uppercase tracking-widest text-bg transition-transform duration-150 active:scale-[0.97]"
         >
           <Ticket size={16} strokeWidth={1.75} />

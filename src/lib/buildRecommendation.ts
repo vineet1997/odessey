@@ -75,6 +75,7 @@ interface ShowtimeEntry {
 
 interface VenueShowtimes {
   venueId: string;
+  districtUrl: string | null;
   showtimes: ShowtimeEntry[];
   error?: string;
 }
@@ -171,6 +172,7 @@ interface Candidate {
   coords: { lat: number; lng: number };
   showtime: ShowtimeEntry;
   fetchedAt: string;
+  districtUrl: string | null;
 }
 
 interface Scored {
@@ -250,6 +252,7 @@ export async function buildRecommendation(
       coords,
       showtime: matching[0],
       fetchedAt: (showtimesData as { _meta: { generatedAt: string } })._meta.generatedAt,
+      districtUrl: venueShowtimes.districtUrl,
     });
   }
 
@@ -329,6 +332,9 @@ export async function buildRecommendation(
         }
       : undefined,
     score: winner.score,
+    // Fallback covers the type's null possibility (shouldn't happen for the 15
+    // curated venues in practice) — a generic search beats a dead button.
+    districtUrl: winner.candidate.districtUrl ?? "https://www.district.in/movies/the-odyssey-movie-tickets-in-delhi-ncr-MV187151",
   };
 
   return { ok: true, result };
