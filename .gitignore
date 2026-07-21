@@ -13,3 +13,11 @@ dist-ssr
 
 # Editor/OS
 .DS_Store
+
+# Reference/working material — not part of the shipped app. images/ holds
+# raw AI-generator outputs (~200MB) plus the official poster/teaser (real
+# studio IP, shouldn't live in a public repo); demo video/ is a one-off
+# screen recording used as a design reference. The production assets
+# derived from these live in public/assets/ and ARE committed.
+images/
+demo video/
