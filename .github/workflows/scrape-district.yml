@@ -1,0 +1,55 @@
+name: Scrape District showtimes
+
+# Refreshes data/showtimes-live.json from district.in on a schedule.
+# The scraper itself only hits ~15 public, server-rendered district.in
+# pages (no auth, no API key) — see scripts/scrape-district.ts and
+# BRIEF.md's "Tech" section for the full architecture this fits into.
+#
+# When this job pushes a change, Vercel's git integration picks up the
+# push and redeploys automatically — that's the whole "static app fed
+# by a robot" mechanism. No Vercel-side webhook/token needed here.
+
+on:
+  schedule:
+    # Every 30 minutes. GitHub's scheduler is best-effort and can run a
+    # few minutes late, especially at busy times — that's fine for this.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape-district
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the District scraper
+        run: npm run scrape:district
+
+      - name: Commit and push if the data actually changed
+        run: |
+          git config user.name "ithaka-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/showtimes-live.json
+          if git diff --cached --quiet; then
+            echo "No change in showtimes-live.json — nothing to commit."
+          else
+            git commit -m "chore: refresh District showtimes"
+            git push
+          fi
