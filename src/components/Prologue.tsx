@@ -92,7 +92,7 @@ export function Prologue({ onComplete }: PrologueProps) {
   }, [reduceMotion]);
 
   function handleBegin() {
-    localStorage.setItem("ithaka_visited", "1");
+    sessionStorage.setItem("ithaka_visited", "1");
     onComplete();
   }
 

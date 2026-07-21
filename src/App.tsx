@@ -16,7 +16,11 @@ type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
 function App() {
   const [stage, setStage] = useState<Stage>(() =>
-    localStorage.getItem("ithaka_visited") ? "helm" : "prologue"
+    // sessionStorage, not localStorage: clears per browser tab/session, so a
+    // fresh visit later replays the Prologue instead of skipping it forever
+    // for anyone who's ever clicked Begin once on that browser (a real bug —
+    // see the commit that introduced this fix for the full diagnosis).
+    sessionStorage.getItem("ithaka_visited") ? "helm" : "prologue"
   );
   const [answers, setAnswers] = useState<HelmAnswers | null>(null);
   const [result, setResult] = useState<RecommendationResult | null>(null);
