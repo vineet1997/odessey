@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Vite/TS build info
+*.tsbuildinfo
+
+# Env files — never commit real secrets (e.g. the Google Maps key)
+.env
+.env.*
+!.env.example
+
+# Editor/OS
+.DS_Store

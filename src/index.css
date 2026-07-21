@@ -1,0 +1,42 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color tokens — "wine-dark sea" (dark mode only) — see design-system/ithaka/MASTER.md */
+  --bg: #0a0e14;
+  --bg-raised: #111722;
+  --ink: #e9e4d8;
+  --ink-muted: #8b94a3;
+  --gold: #c9a227;
+  --gold-bright: #e3c158;
+  --sea: #2e6e73;
+  --sea-bright: #5fa8ad;
+  --wine: #722f37;
+  --wine-bright: #c96f6f;
+  --border: rgba(233, 228, 216, 0.1);
+
+  /* Spacing scale — Density 3/10 (Spacious) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: '"Source Serif 4"', serif;
+}
