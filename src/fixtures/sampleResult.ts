@@ -29,6 +29,7 @@ import {
   type UserContext,
   type Venue,
 } from "../scoring/score";
+import type { RecommendationResult } from "../types/recommendation";
 
 // ---------------------------------------------------------------------------
 // Winner: PVR Select City Walk, Saket
@@ -77,54 +78,12 @@ const runnerUpContext: UserContext = {
 const runnerUpScore: ScoreResult = scoreVenue(runnerUpVenue, runnerUpContext, WORTH_EVERY_RUPEE);
 
 // ---------------------------------------------------------------------------
-// Shape the ResultCard actually consumes
+// Shape the ResultCard actually consumes — now a shared type (src/types/recommendation.ts),
+// since src/lib/buildRecommendation.ts needs to produce the same shape from real data.
+// Re-exported here so nothing importing from this fixture file has to change.
 // ---------------------------------------------------------------------------
 
-export type ReturnStatus = "good" | "stranded";
-
-export interface JourneyLeg {
-  lineLabel: string;
-  lineColorHex: string; // real DMRC line color, per DESIGN.md
-  durationMinutes: number;
-  costRupees: number;
-}
-
-export interface ReturnLeg extends JourneyLeg {
-  status: ReturnStatus;
-  /** e.g. "THE 11:32 PM LAST TRAIN FROM MALVIYA NAGAR GETS YOU HOME" */
-  headline: string;
-  /** Only present when status === "stranded" — the cab fallback range. */
-  cabFallbackLabel?: string;
-}
-
-export interface RunnerUp {
-  venueName: string;
-  locality: string;
-  formatChip: string;
-  priceLabel: string;
-  showtime: string;
-  score: ScoreResult;
-}
-
-export interface RecommendationResult {
-  intentLabel: string; // "WORTH EVERY RUPEE"
-  freshnessLabel: string; // "AS OF 18:42"
-  venueName: string;
-  formatChip: string;
-  verdict: string; // serif italic one-liner
-  showtime: string; // "4:50 PM"
-  dateLabel: string; // "MON JUL 20"
-  seatClass: string; // "CLASSIC"
-  priceLabel: string; // "₹1,100"
-  journey: {
-    outbound: JourneyLeg;
-    return: ReturnLeg;
-    totalCostRupees: number;
-  };
-  whyLine: string;
-  runnerUp: RunnerUp;
-  score: ScoreResult;
-}
+export type { ReturnStatus, JourneyLeg, ReturnLeg, RunnerUp, RecommendationResult } from "../types/recommendation";
 
 export const sampleResult: RecommendationResult = {
   intentLabel: WORTH_EVERY_RUPEE.label.toUpperCase(),

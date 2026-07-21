@@ -106,6 +106,10 @@ interface Showtime {
    * still purchasable (excludes Sold Out / disableClick tiers — a price you can't pay isn't a
    * real price band, per this project's "never oversell" rule). Null if every class is sold out. */
   priceRange: { min: number; max: number } | null;
+  /** The seat-class label (e.g. "CLASSIC", "RECLINER") that priceRange.min actually belongs
+   * to — added so the UI can show a real class name instead of inventing one. Null alongside
+   * priceRange when everything's sold out. */
+  cheapestSeatClassLabel: string | null;
 }
 
 interface VenueResult {
@@ -204,6 +208,15 @@ function buildPriceRange(session: DistrictSession): { min: number; max: number }
   return { min: Math.min(...prices), max: Math.max(...prices) };
 }
 
+function buildCheapestSeatClassLabel(session: DistrictSession): string | null {
+  const bookable = (session.areas ?? []).filter(
+    (a) => a.disableClick !== true && typeof a.price === "number"
+  );
+  if (bookable.length === 0) return null;
+  const cheapest = bookable.reduce((min, a) => ((a.price as number) < (min.price as number) ? a : min));
+  return cheapest.label ?? null;
+}
+
 function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
   // Defensive traversal — district.in's page shape isn't a public contract, so every
   // step is optional-chained; anything missing just means "no showtimes found", not a crash.
@@ -234,6 +247,7 @@ function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
           seatsAvailable: typeof session.avail === "number" ? session.avail : null,
           seatsTotal: typeof session.total === "number" ? session.total : null,
           priceRange: buildPriceRange(session),
+          cheapestSeatClassLabel: buildCheapestSeatClassLabel(session),
           _sortKey: showTime, // ISO "YYYY-MM-DDTHH:MM" sorts correctly as a plain string
         } as Showtime & { _sortKey: string });
       }

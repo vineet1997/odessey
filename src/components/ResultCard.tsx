@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { AlertTriangle, ChevronDown, MapPin, Share2, Ticket, TrainFront } from "lucide-react";
-import type { RecommendationResult } from "../fixtures/sampleResult";
+import type { RecommendationResult } from "../types/recommendation";
 
 interface ResultCardProps {
   result: RecommendationResult;
@@ -164,29 +164,33 @@ export function ResultCard({ result }: ResultCardProps) {
       {/* 6. Why line */}
       <p className="font-body text-[14px] leading-relaxed text-ink-muted">{result.whyLine}</p>
 
-      {/* 7. Runner-up — collapsed row, expandable */}
-      <button
-        type="button"
-        onClick={() => setRunnerUpOpen((open) => !open)}
-        className="flex w-full cursor-pointer flex-col gap-1 rounded-md border border-border px-3 py-2 text-left transition-colors duration-150 hover:border-gold/40"
-      >
-        <span className="flex items-center justify-between">
-          <span className="font-display text-[15px] text-ink">{result.runnerUp.venueName}</span>
-          <span className="flex items-center gap-2 font-mono text-[12px] text-ink-muted">
-            {result.runnerUp.priceLabel}
-            <ChevronDown
-              size={14}
-              strokeWidth={1.5}
-              className={`transition-transform duration-150 ${runnerUpOpen ? "rotate-180" : ""}`}
-            />
+      {/* 7. Runner-up — collapsed row, expandable. Absent when only one venue
+          matched this request (e.g. a narrow time band) — no row rendered
+          rather than fabricate a second option that doesn't exist. */}
+      {result.runnerUp && (
+        <button
+          type="button"
+          onClick={() => setRunnerUpOpen((open) => !open)}
+          className="flex w-full cursor-pointer flex-col gap-1 rounded-md border border-border px-3 py-2 text-left transition-colors duration-150 hover:border-gold/40"
+        >
+          <span className="flex items-center justify-between">
+            <span className="font-display text-[15px] text-ink">{result.runnerUp.venueName}</span>
+            <span className="flex items-center gap-2 font-mono text-[12px] text-ink-muted">
+              {result.runnerUp.priceLabel}
+              <ChevronDown
+                size={14}
+                strokeWidth={1.5}
+                className={`transition-transform duration-150 ${runnerUpOpen ? "rotate-180" : ""}`}
+              />
+            </span>
           </span>
-        </span>
-        {runnerUpOpen && (
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-muted">
-            {result.runnerUp.locality} · {result.runnerUp.formatChip} · {result.runnerUp.showtime}
-          </span>
-        )}
-      </button>
+          {runnerUpOpen && (
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-muted">
+              {result.runnerUp.locality} · {result.runnerUp.formatChip} · {result.runnerUp.showtime}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* 8. Actions */}
       <div className="mt-auto flex gap-2 pt-2">

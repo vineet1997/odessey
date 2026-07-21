@@ -1,31 +1,60 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { buildRecommendation } from "../lib/buildRecommendation";
+import type { Locality } from "../fixtures/localities";
+import type { TimeBand } from "./helm/types";
+import type { IntentId } from "../scoring/score";
+import type { RecommendationResult } from "../types/recommendation";
 
 interface CrossingProps {
-  /** Fires automatically once the crossing's placeholder duration elapses. */
-  onComplete: () => void;
+  locality: Locality;
+  timeBand: TimeBand;
+  intentId: IntentId;
+  /** Fires once a real recommendation is computed. */
+  onComplete: (result: RecommendationResult) => void;
+  /** Fires if nothing could be computed — a real, honest failure, not silently swallowed. */
+  onError: (reason: string) => void;
 }
 
-const LOG_STEPS = ["CHECKING 14 SCREENS", "TONIGHT'S SHOWS", "LAST TRAINS", "FARES"];
+const LOG_STEPS = ["CHECKING SCREENS", "TONIGHT'S SHOWS", "LIVE TRAVEL TIMES", "FARES"];
 
-// NOTE: there is no live routing/scoring call in this codebase yet (no
-// scraper, no routing proxy — see BRIEF.md's "Next" steps). DESIGN.md's
-// spec is for this duration to equal *actual* latency capped at 1.5s, but
-// since there is nothing real to time yet, this is a fixed placeholder
-// comfortably under that cap. Once a real routing proxy exists, replace
-// this timer with the real request's resolve time (still capped at 1.5s).
-const PLACEHOLDER_DURATION_MS = 1200;
-const STEP_INTERVAL_MS = PLACEHOLDER_DURATION_MS / LOG_STEPS.length; // ~300ms/step
+// The crossing now does real work (src/lib/buildRecommendation.ts — real venue/showtime
+// data plus a live call to the routing proxy), per DESIGN.md's "duration = actual latency"
+// intent. MIN_VISUAL_DURATION_MS is the floor (DESIGN.md: "if data comes instantly, the
+// crossing is 600ms") so the screen never flashes by unreadably fast; the real computation
+// can run longer than that without penalty. FETCH_TIMEOUT_MS is a safety cap distinct from
+// DESIGN.md's 1.5s *display* cap — a genuinely slow network shouldn't hang the app forever.
+const MIN_VISUAL_DURATION_MS = 600;
+const FETCH_TIMEOUT_MS = 8000;
+const LOG_STEP_INTERVAL_MS = 300;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T): Promise<T> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(onTimeout());
+      }
+    }, ms);
+    promise.then((value) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }
+    });
+  });
+}
 
 /**
  * The Crossing — DESIGN.md §"3 · The Crossing (computation-as-theater)".
- * A thin gold line draws across a dark, purely geometric abstract (a few
- * lines/dots suggesting a path toward a horizon — per DESIGN.md's own
- * open question, resolved toward pure geometry rather than a real map)
- * while a mono log ticks through the steps being "checked". Auto-advances
- * via onComplete once the placeholder duration elapses.
+ * A thin gold line draws across a dark, purely geometric abstract while a
+ * mono log ticks through the steps actually being checked — and, since this
+ * pass wires in real data, those steps now correspond to real work: reading
+ * venue/showtime data and calling the live routing proxy per candidate venue.
  */
-export function Crossing({ onComplete }: CrossingProps) {
+export function Crossing({ locality, timeBand, intentId, onComplete, onError }: CrossingProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const pathRef = useRef<SVGPathElement>(null);
   const [reduceMotion] = useState(
@@ -33,20 +62,35 @@ export function Crossing({ onComplete }: CrossingProps) {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     const stepTimer = window.setInterval(() => {
       setStepIndex((i) => Math.min(i + 1, LOG_STEPS.length - 1));
-    }, STEP_INTERVAL_MS);
+    }, LOG_STEP_INTERVAL_MS);
 
-    const completeTimer = window.setTimeout(() => {
-      onComplete();
-    }, PLACEHOLDER_DURATION_MS);
+    const minVisualWait = new Promise<void>((resolve) => setTimeout(resolve, MIN_VISUAL_DURATION_MS));
+
+    const computation = withTimeout(
+      buildRecommendation(locality, timeBand, intentId),
+      FETCH_TIMEOUT_MS,
+      () => ({ ok: false as const, reason: "Taking too long to check live travel times. Try again." })
+    );
+
+    Promise.all([computation, minVisualWait]).then(([outcome]) => {
+      if (cancelled) return;
+      if (outcome.ok) {
+        onComplete(outcome.result);
+      } else {
+        onError(outcome.reason);
+      }
+    });
 
     return () => {
+      cancelled = true;
       window.clearInterval(stepTimer);
-      window.clearTimeout(completeTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [locality, timeBand, intentId]);
 
   useEffect(() => {
     if (reduceMotion) return; // plain ticking log only, no line-draw motion
@@ -58,7 +102,7 @@ export function Crossing({ onComplete }: CrossingProps) {
     gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
     const tween = gsap.to(path, {
       strokeDashoffset: 0,
-      duration: PLACEHOLDER_DURATION_MS / 1000,
+      duration: MIN_VISUAL_DURATION_MS / 1000,
       ease: "expo.out",
     });
 

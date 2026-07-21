@@ -4,16 +4,19 @@ import { Prologue } from "./components/Prologue";
 import { Helm } from "./components/Helm";
 import { Crossing } from "./components/Crossing";
 import { ResultCard } from "./components/ResultCard";
-import { sampleResult } from "./fixtures/sampleResult";
+import { LOCALITIES } from "./fixtures/localities";
 import type { HelmAnswers } from "./components/helm/types";
+import type { RecommendationResult } from "./types/recommendation";
 
-type Stage = "prologue" | "helm" | "crossing" | "result";
+type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
 function App() {
   const [stage, setStage] = useState<Stage>(() =>
     localStorage.getItem("ithaka_visited") ? "helm" : "prologue"
   );
   const [answers, setAnswers] = useState<HelmAnswers | null>(null);
+  const [result, setResult] = useState<RecommendationResult | null>(null);
+  const [errorReason, setErrorReason] = useState<string | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -54,23 +57,73 @@ function App() {
     );
   }
 
-  if (stage === "crossing") {
-    return <Crossing onComplete={() => setStage("result")} />;
+  if (stage === "crossing" && answers) {
+    // Look up the full Locality (with coordinates) the Helm's locality
+    // screen only returns a name for — the routing proxy needs coordinates.
+    const locality = LOCALITIES.find((l) => l.name === answers.locality);
+    if (!locality) {
+      // Shouldn't happen (the Helm only offers names from this same list),
+      // but if it ever does, fail honestly rather than silently guess coordinates.
+      return (
+        <ErrorScreen
+          reason={`Unrecognized locality "${answers.locality}".`}
+          onRetry={() => setStage("helm")}
+        />
+      );
+    }
+    return (
+      <Crossing
+        locality={locality}
+        timeBand={answers.timeBand}
+        intentId={answers.intentId}
+        onComplete={(computed) => {
+          setResult(computed);
+          setStage("result");
+        }}
+        onError={(reason) => {
+          setErrorReason(reason);
+          setStage("error");
+        }}
+      />
+    );
   }
 
-  // NOTE: `answers` holds the user's real picks from the Helm, but
-  // ResultCard still renders the static `sampleResult` fixture — there is
-  // no live venue/showtime/routing pipeline yet (see BRIEF.md "Next" steps
-  // and the task brief for this pass). Wiring the user's actual locality/
-  // day/time-band/intent into a real scored result is future work once
-  // that data pipeline exists; this pass only proves the click-through
-  // flow feels complete end to end.
-  void answers;
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
-      <div ref={resultRef} className="w-full">
-        <ResultCard result={sampleResult} />
+  if (stage === "error") {
+    return (
+      <ErrorScreen
+        reason={errorReason ?? "Something went wrong."}
+        onRetry={() => setStage("helm")}
+      />
+    );
+  }
+
+  if (stage === "result" && result) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
+        <div ref={resultRef} className="w-full">
+          <ResultCard result={result} />
+        </div>
       </div>
+    );
+  }
+
+  // Shouldn't be reachable (every stage above returns), but keeps the
+  // component total rather than silently rendering nothing.
+  return <Helm onComplete={(helmAnswers) => { setAnswers(helmAnswers); setStage("crossing"); }} />;
+}
+
+function ErrorScreen({ reason, onRetry }: { reason: string; onRetry: () => void }) {
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-bg px-6 text-center">
+      <p className="font-display text-[24px] text-ink">Couldn&rsquo;t find your screen tonight.</p>
+      <p className="max-w-[360px] font-body text-[15px] leading-relaxed text-ink-muted">{reason}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="min-h-[48px] cursor-pointer rounded-md border border-gold px-8 font-mono text-[12px] uppercase tracking-widest text-gold-bright transition-transform duration-150 active:scale-[0.97]"
+      >
+        Try again
+      </button>
     </div>
   );
 }
