@@ -1,7 +1,69 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { AlertTriangle, ChevronDown, MapPin, Share2, Ticket, TrainFront } from "lucide-react";
+import { toPng } from "html-to-image";
+import { AlertTriangle, ChevronDown, Loader2, MapPin, Share2, Ticket, TrainFront } from "lucide-react";
 import type { RecommendationResult } from "../types/recommendation";
+
+/** DESIGN.md: "share button renders it to a 1080x1350 PNG with the wordmark
+ * baked in" — the card is already a 4:5 object, so this is just a pixelRatio
+ * scaled up from whatever the card's actual on-screen width happens to be. */
+const EXPORT_WIDTH_PX = 1080;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error(message)), ms)),
+  ]);
+}
+
+async function shareCard(cardEl: HTMLElement, venueName: string): Promise<void> {
+  const pixelRatio = EXPORT_WIDTH_PX / cardEl.offsetWidth;
+  const dataUrl = await withTimeout(
+    toPng(cardEl, {
+      pixelRatio,
+      backgroundColor:
+        getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0a0e14",
+      // Fonts are already loaded and rendering live on the page (Google Fonts
+      // @import in index.css) — html-to-image's font-embedding step otherwise
+      // tries to re-fetch and inline that stylesheet's CSS for a "portable"
+      // SVG, which throws on the cross-origin fonts.googleapis.com stylesheet
+      // (a documented CORS pitfall with this library). Skipping it: the
+      // exported PNG still renders the already-applied fonts correctly,
+      // since capture reflects the live DOM, not a rebuilt one.
+      skipFonts: true,
+    }),
+    // Defensive cap — html-to-image's internal image-decode step waits on a
+    // requestAnimationFrame callback to resolve, which some environments
+    // (e.g. a backgrounded/inactive browser tab) can suspend indefinitely.
+    // A real user's focused tab resolves this in well under a second; this
+    // timeout only exists so the button can never get stuck spinning forever.
+    8000,
+    "Timed out generating the image."
+  );
+
+  const filename = `ithaka-${venueName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
+
+  // Prefer the native share sheet (mobile) so the image can go straight into
+  // WhatsApp/Instagram, per DESIGN.md's whole point of the card being a
+  // screenshot object. Falls back to a plain download when unsupported
+  // (most desktop browsers) rather than failing silently.
+  const blob = await (await fetch(dataUrl)).blob();
+  const file = new File([blob], filename, { type: "image/png" });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "Ithaka",
+      text: `Where to watch The Odyssey: ${venueName}`,
+    });
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  link.click();
+}
 
 interface ResultCardProps {
   result: RecommendationResult;
@@ -22,6 +84,26 @@ export function ResultCard({ result }: ResultCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const borderRef = useRef<SVGRectElement>(null);
   const [runnerUpOpen, setRunnerUpOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState(false);
+
+  async function handleShare() {
+    if (!cardRef.current || sharing) return;
+    setSharing(true);
+    setShareError(false);
+    try {
+      await shareCard(cardRef.current, result.venueName);
+    } catch (err) {
+      // AbortError fires when the user just closes the native share sheet —
+      // not a real failure, don't flag it as one.
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      console.error("Share failed:", err);
+      setShareError(true);
+      window.setTimeout(() => setShareError(false), 2500);
+    } finally {
+      setSharing(false);
+    }
+  }
 
   useEffect(() => {
     const card = cardRef.current;
@@ -214,13 +296,18 @@ export function ResultCard({ result }: ResultCardProps) {
         </button>
         <button
           type="button"
-          onClick={() => {
-            /* stub — PNG share export is out of scope for this pass */
-          }}
-          className="flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-border font-mono text-[12px] uppercase tracking-widest text-gold-bright transition-transform duration-150 active:scale-[0.97]"
-          aria-label="Share"
+          onClick={handleShare}
+          disabled={sharing}
+          className={`flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-mono text-[12px] uppercase tracking-widest transition-transform duration-150 active:scale-[0.97] disabled:cursor-wait ${
+            shareError ? "border-wine text-wine-bright" : "border-border text-gold-bright"
+          }`}
+          aria-label={shareError ? "Share failed, try again" : "Share"}
         >
-          <Share2 size={16} strokeWidth={1.75} />
+          {sharing ? (
+            <Loader2 size={16} strokeWidth={1.75} className="animate-spin" />
+          ) : (
+            <Share2 size={16} strokeWidth={1.75} />
+          )}
         </button>
       </div>
 
