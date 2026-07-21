@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { buildRecommendation } from "../lib/buildRecommendation";
+import { buildRecommendation, type MapVenue } from "../lib/buildRecommendation";
 import type { Locality } from "../fixtures/localities";
 import type { TimeBand } from "./helm/types";
 import type { IntentId } from "../scoring/score";
@@ -10,8 +10,9 @@ interface CrossingProps {
   locality: Locality;
   timeBand: TimeBand;
   intentId: IntentId;
-  /** Fires once a real recommendation is computed. */
-  onComplete: (result: RecommendationResult) => void;
+  /** Fires once a real recommendation is computed. mapVenues is every scored
+   * candidate (not just the winner/runner-up) — the data the explore map draws from. */
+  onComplete: (result: RecommendationResult, mapVenues: MapVenue[]) => void;
   /** Fires if nothing could be computed — a real, honest failure, not silently swallowed. */
   onError: (reason: string) => void;
 }
@@ -79,7 +80,7 @@ export function Crossing({ locality, timeBand, intentId, onComplete, onError }: 
     Promise.all([computation, minVisualWait]).then(([outcome]) => {
       if (cancelled) return;
       if (outcome.ok) {
-        onComplete(outcome.result);
+        onComplete(outcome.result, outcome.mapVenues);
       } else {
         onError(outcome.reason);
       }

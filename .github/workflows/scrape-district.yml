@@ -13,6 +13,15 @@ on:
   schedule:
     # Every 30 minutes. GitHub's scheduler is best-effort and can run a
     # few minutes late, especially at busy times — that's fine for this.
+    #
+    # Note (2026-07-21): brand-new schedule triggers on GitHub Actions can
+    # take 1-3 hours to start firing after being added, even though the
+    # workflow itself is valid (confirmed working via manual dispatch
+    # within minutes of adding this file). If scheduled runs are still
+    # absent well beyond that window, check: Settings -> Actions ->
+    # General isn't restricting scheduled workflows, and that this file
+    # is still present on the default branch (schedule only reads from
+    # the branch's latest commit).
     - cron: "*/30 * * * *"
   workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
 

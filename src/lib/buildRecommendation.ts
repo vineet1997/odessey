@@ -86,8 +86,26 @@ interface RouteApiResponse {
   distanceKm?: number;
 }
 
+/** One scored candidate venue, shaped for the map explorer — every field here
+ * is a real number the scoring engine actually used, not a display-only
+ * summary invented separately. This is the "why" the trust/explore view
+ * shows: the same data buildRecommendation() ranked on, not a re-telling of it. */
+export interface MapVenue {
+  id: string;
+  name: string;
+  coords: { lat: number; lng: number };
+  experienceScore: number;
+  priceRupees: number;
+  formatChip: string;
+  distanceKm: number;
+  durationMinutes: number;
+  totalScore: number;
+  isWinner: boolean;
+  isRunnerUp: boolean;
+}
+
 export type BuildRecommendationResult =
-  | { ok: true; result: RecommendationResult }
+  | { ok: true; result: RecommendationResult; mapVenues: MapVenue[] }
   | { ok: false; reason: string };
 
 function getVenueCoords(v: CuratedVenue): { lat: number; lng: number } | null {
@@ -337,5 +355,19 @@ export async function buildRecommendation(
     districtUrl: winner.candidate.districtUrl ?? "https://www.district.in/movies/the-odyssey-movie-tickets-in-delhi-ncr-MV187151",
   };
 
-  return { ok: true, result };
+  const mapVenues: MapVenue[] = scored.map((s) => ({
+    id: s.candidate.venue.id,
+    name: s.candidate.venue.name,
+    coords: s.candidate.coords,
+    experienceScore: s.candidate.venue.score,
+    priceRupees: s.candidate.showtime.priceRange!.min,
+    formatChip: s.candidate.showtime.format,
+    distanceKm: s.route.distanceKm,
+    durationMinutes: s.route.durationMinutes,
+    totalScore: s.score.totalScore,
+    isWinner: s === winner,
+    isRunnerUp: s === runnerUp,
+  }));
+
+  return { ok: true, result, mapVenues };
 }

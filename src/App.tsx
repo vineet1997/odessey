@@ -1,14 +1,16 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Map as MapIcon, ChevronUp } from "lucide-react";
 import { Prologue } from "./components/Prologue";
 import { Helm } from "./components/Helm";
 import { Crossing } from "./components/Crossing";
 import { ResultCard } from "./components/ResultCard";
+import { MapExplorer } from "./components/MapExplorer";
 import { LOCALITIES } from "./fixtures/localities";
 import { INTENTS, type IntentId } from "./scoring/score";
 import type { HelmAnswers } from "./components/helm/types";
 import type { RecommendationResult } from "./types/recommendation";
+import type { MapVenue } from "./lib/buildRecommendation";
 
 type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
@@ -18,7 +20,9 @@ function App() {
   );
   const [answers, setAnswers] = useState<HelmAnswers | null>(null);
   const [result, setResult] = useState<RecommendationResult | null>(null);
+  const [mapVenues, setMapVenues] = useState<MapVenue[]>([]);
   const [errorReason, setErrorReason] = useState<string | null>(null);
+  const [exploreOpen, setExploreOpen] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -91,8 +95,9 @@ function App() {
         locality={locality}
         timeBand={answers.timeBand}
         intentId={answers.intentId}
-        onComplete={(computed) => {
+        onComplete={(computed, venues) => {
           setResult(computed);
+          setMapVenues(venues);
           setStage("result");
         }}
         onError={(reason) => {
@@ -108,6 +113,7 @@ function App() {
   }
 
   if (stage === "result" && result && answers) {
+    const locality = LOCALITIES.find((l) => l.name === answers.locality);
     return (
       <div className="flex min-h-screen w-full flex-col items-center gap-5 bg-bg px-4 py-10">
         <div ref={resultRef} className="w-full">
@@ -119,6 +125,22 @@ function App() {
             chrome to the thing people actually share. */}
         <div className="flex w-full max-w-[480px] flex-col items-center gap-4">
           <IntentSwitcher active={answers.intentId} onSwitch={switchIntent} />
+
+          {locality && mapVenues.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setExploreOpen((open) => !open)}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border py-2.5 font-mono text-[11px] uppercase tracking-widest text-gold-bright transition-colors duration-150 hover:border-gold/40"
+            >
+              {exploreOpen ? <ChevronUp size={14} strokeWidth={1.75} /> : <MapIcon size={14} strokeWidth={1.75} />}
+              {exploreOpen ? "Hide the map" : `See all ${mapVenues.length} venues we checked`}
+            </button>
+          )}
+
+          {exploreOpen && locality && (
+            <MapExplorer locality={locality} venues={mapVenues} />
+          )}
+
           <button
             type="button"
             onClick={startOver}
