@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generatedAt": "2026-07-22T18:01:54.580Z",
+    "generatedAt": "2026-07-22T18:31:56.154Z",
     "movieTitle": "The Odyssey",
     "source": "district.in (__NEXT_DATA__ embedded session JSON)",
     "timezone": "IST (converted from District's UTC showTime fields)",
@@ -20,7 +20,7 @@
     "priya-vasant-vihar": {
       "venueId": "priya-vasant-vihar",
       "districtUrl": "https://www.district.in/movies/pvr-imax-with-laser-priya-vasant-vihar-new-delhi-in-new-delhi-CD1022246",
-      "fetchedAt": "2026-07-22T18:00:19.666Z",
+      "fetchedAt": "2026-07-22T18:30:19.500Z",
       "showtimes": [
         {
           "date": "2026-07-22",
@@ -28,84 +28,6 @@
           "format": "IMAX 2D",
           "availability": "Filling Fast",
           "seatsAvailable": 111,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 1000,
-            "max": 1300
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:30 AM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 112,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 500,
-            "max": 1400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:45 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 161,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 1000,
-            "max": 2400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 107,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 1000,
-            "max": 2100
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 106,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 1000,
-            "max": 1300
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 89,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 1000,
-            "max": 1300
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 156,
           "seatsTotal": 381,
           "priceRange": {
             "min": 1000,
@@ -144,7 +66,7 @@
           "time": "1:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 140,
+          "seatsAvailable": 138,
           "seatsTotal": 381,
           "priceRange": {
             "min": 1000,
@@ -170,7 +92,7 @@
           "time": "8:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 89,
+          "seatsAvailable": 83,
           "seatsTotal": 381,
           "priceRange": {
             "min": 1000,
@@ -196,7 +118,7 @@
           "time": "6:30 AM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 118,
+          "seatsAvailable": 128,
           "seatsTotal": 381,
           "priceRange": {
             "min": 600,
@@ -274,7 +196,7 @@
           "time": "6:30 AM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 133,
+          "seatsAvailable": 134,
           "seatsTotal": 381,
           "priceRange": {
             "min": 600,
@@ -352,187 +274,18 @@
     "select-citywalk-saket": {
       "venueId": "select-citywalk-saket",
       "districtUrl": "https://www.district.in/movies/pvr-select-city-walk-saket-new-delhi-in-delhi-ncr-CD1022254",
-      "fetchedAt": "2026-07-22T18:00:26.357Z",
+      "fetchedAt": "2026-07-22T18:30:25.600Z",
       "showtimes": [
         {
           "date": "2026-07-22",
           "time": "11:50 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 140,
+          "seatsAvailable": 143,
           "seatsTotal": 380,
           "priceRange": {
             "min": 1000,
             "max": 2400
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:35 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 243,
-          "seatsTotal": 285,
-          "priceRange": {
-            "min": 600,
-            "max": 1600
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:30 AM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 148,
-          "seatsTotal": 152,
-          "priceRange": {
-            "min": 260,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:50 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 226,
-          "seatsTotal": 285,
-          "priceRange": {
-            "min": 900,
-            "max": 1700
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:00 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 31,
-          "seatsTotal": 40,
-          "priceRange": {
-            "min": 650,
-            "max": 650
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:20 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 161,
-          "seatsTotal": 380,
-          "priceRange": {
-            "min": 1000,
-            "max": 2400
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:30 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 29,
-          "seatsTotal": 40,
-          "priceRange": {
-            "min": 650,
-            "max": 650
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:45 PM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 309,
-          "seatsTotal": 317,
-          "priceRange": {
-            "min": 310,
-            "max": 750
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:50 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 152,
-          "seatsTotal": 380,
-          "priceRange": {
-            "min": 1000,
-            "max": 1450
-          },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:00 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 27,
-          "seatsTotal": 40,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:20 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 100,
-          "seatsTotal": 380,
-          "priceRange": {
-            "min": 1050,
-            "max": 1450
-          },
-          "cheapestSeatClassLabel": "LOUNGER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:30 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 29,
-          "seatsTotal": 40,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:00 PM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 314,
-          "seatsTotal": 317,
-          "priceRange": {
-            "min": 340,
-            "max": 630
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:50 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 237,
-          "seatsTotal": 285,
-          "priceRange": {
-            "min": 1000,
-            "max": 2000
           },
           "cheapestSeatClassLabel": "CLASSIC NORMAL"
         },
@@ -671,7 +424,7 @@
           "time": "9:45 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 168,
+          "seatsAvailable": 156,
           "seatsTotal": 380,
           "priceRange": {
             "min": 900,
@@ -710,21 +463,21 @@
           "time": "4:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 121,
+          "seatsAvailable": 108,
           "seatsTotal": 380,
           "priceRange": {
-            "min": 1000,
+            "min": 1050,
             "max": 1450
           },
-          "cheapestSeatClassLabel": "CLASSIC NORMAL"
+          "cheapestSeatClassLabel": "LOUNGER"
         },
         {
           "date": "2026-07-25",
           "time": "7:10 PM",
           "format": "GOLD 2D",
           "availability": "Available",
-          "seatsAvailable": 31,
-          "seatsTotal": 31,
+          "seatsAvailable": 25,
+          "seatsTotal": 40,
           "priceRange": {
             "min": 1300,
             "max": 1500
@@ -775,7 +528,7 @@
           "time": "6:30 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 231,
+          "seatsAvailable": 229,
           "seatsTotal": 285,
           "priceRange": {
             "min": 600,
@@ -892,200 +645,18 @@
     "mall-of-india-noida": {
       "venueId": "mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-superplex-mall-of-india-sector-18-noida-in-delhi-ncr-CD1024358",
-      "fetchedAt": "2026-07-22T18:00:32.778Z",
+      "fetchedAt": "2026-07-22T18:30:31.866Z",
       "showtimes": [
         {
           "date": "2026-07-22",
-          "time": "11:00 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 125,
-          "seatsTotal": 160,
-          "priceRange": {
-            "min": 470,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-22",
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 204,
+          "seatsAvailable": 190,
           "seatsTotal": 361,
           "priceRange": {
             "min": 900,
             "max": 1440
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:45 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 295,
-          "seatsTotal": 361,
-          "priceRange": {
-            "min": 780,
-            "max": 1080
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:30 AM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 280,
-          "seatsTotal": 357,
-          "priceRange": {
-            "min": 190,
-            "max": 400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:30 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 147,
-          "seatsTotal": 160,
-          "priceRange": {
-            "min": 430,
-            "max": 450
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 248,
-          "seatsTotal": 361,
-          "priceRange": {
-            "min": 900,
-            "max": 1440
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:00 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 283,
-          "seatsTotal": 306,
-          "priceRange": {
-            "min": 240,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:00 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 156,
-          "seatsTotal": 160,
-          "priceRange": {
-            "min": 440,
-            "max": 460
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:50 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 187,
-          "seatsTotal": 361,
-          "priceRange": {
-            "min": 900,
-            "max": 1440
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:30 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 290,
-          "seatsTotal": 306,
-          "priceRange": {
-            "min": 270,
-            "max": 700
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:30 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 142,
-          "seatsTotal": 160,
-          "priceRange": {
-            "min": 470,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 118,
-          "seatsTotal": 361,
-          "priceRange": {
-            "min": 900,
-            "max": 1440
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:00 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 299,
-          "seatsTotal": 306,
-          "priceRange": {
-            "min": 270,
-            "max": 700
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:00 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 157,
-          "seatsTotal": 160,
-          "priceRange": {
-            "min": 470,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 279,
-          "seatsTotal": 361,
-          "priceRange": {
-            "min": 900,
-            "max": 1104
           },
           "cheapestSeatClassLabel": "CLASSIC"
         },
@@ -1107,7 +678,7 @@
           "time": "1:15 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 279,
+          "seatsAvailable": 258,
           "seatsTotal": 361,
           "priceRange": {
             "min": 900,
@@ -1159,7 +730,7 @@
           "time": "9:45 AM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 137,
+          "seatsAvailable": 135,
           "seatsTotal": 361,
           "priceRange": {
             "min": 780,
@@ -1276,7 +847,7 @@
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 254,
+          "seatsAvailable": 252,
           "seatsTotal": 259,
           "priceRange": {
             "min": 900,
@@ -1289,34 +860,8 @@
     "vegas-dwarka": {
       "venueId": "vegas-dwarka",
       "districtUrl": "https://www.district.in/movies/pvr-vegas-dwarka-new-delhi-in-gurgaon-CD1022286",
-      "fetchedAt": "2026-07-22T18:00:39.085Z",
+      "fetchedAt": "2026-07-22T18:30:37.732Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "10:45 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 31,
-          "seatsTotal": 52,
-          "priceRange": {
-            "min": 880,
-            "max": 1030
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-22",
-          "time": "11:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 274,
-          "seatsTotal": 410,
-          "priceRange": {
-            "min": 830,
-            "max": 1380
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
         {
           "date": "2026-07-22",
           "time": "11:55 PM",
@@ -1327,240 +872,6 @@
           "priceRange": {
             "min": 440,
             "max": 520
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:00 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 304,
-          "seatsTotal": 323,
-          "priceRange": {
-            "min": 400,
-            "max": 530
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:15 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 277,
-          "seatsTotal": 323,
-          "priceRange": {
-            "min": 630,
-            "max": 900
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:55 AM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 96,
-          "seatsTotal": 96,
-          "priceRange": {
-            "min": 360,
-            "max": 390
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:45 AM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 22,
-          "seatsTotal": 24,
-          "priceRange": {
-            "min": 530,
-            "max": 630
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:15 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 42,
-          "seatsTotal": 42,
-          "priceRange": {
-            "min": 630,
-            "max": 730
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 277,
-          "seatsTotal": 323,
-          "priceRange": {
-            "min": 830,
-            "max": 1260
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:25 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 90,
-          "seatsTotal": 96,
-          "priceRange": {
-            "min": 410,
-            "max": 440
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "2:50 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 182,
-          "seatsTotal": 184,
-          "priceRange": {
-            "min": 310,
-            "max": 340
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:45 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 42,
-          "seatsTotal": 52,
-          "priceRange": {
-            "min": 630,
-            "max": 730
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 325,
-          "seatsTotal": 410,
-          "priceRange": {
-            "min": 830,
-            "max": 1260
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:55 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 83,
-          "seatsTotal": 96,
-          "priceRange": {
-            "min": 410,
-            "max": 470
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:15 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 39,
-          "seatsTotal": 42,
-          "priceRange": {
-            "min": 830,
-            "max": 930
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 267,
-          "seatsTotal": 410,
-          "priceRange": {
-            "min": 830,
-            "max": 1380
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:25 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 94,
-          "seatsTotal": 96,
-          "priceRange": {
-            "min": 440,
-            "max": 460
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:50 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 184,
-          "seatsTotal": 184,
-          "priceRange": {
-            "min": 340,
-            "max": 360
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:45 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 42,
-          "seatsTotal": 42,
-          "priceRange": {
-            "min": 830,
-            "max": 930
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 292,
-          "seatsTotal": 323,
-          "priceRange": {
-            "min": 830,
-            "max": 1050
-          },
-          "cheapestSeatClassLabel": "CLASSIC ROWS"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:55 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 96,
-          "seatsTotal": 96,
-          "priceRange": {
-            "min": 440,
-            "max": 460
           },
           "cheapestSeatClassLabel": "CLASSIC ROWS"
         },
@@ -1634,7 +945,7 @@
           "time": "12:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 294,
+          "seatsAvailable": 289,
           "seatsTotal": 323,
           "priceRange": {
             "min": 830,
@@ -1660,7 +971,7 @@
           "time": "4:15 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 292,
+          "seatsAvailable": 290,
           "seatsTotal": 323,
           "priceRange": {
             "min": 830,
@@ -1687,7 +998,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -1751,7 +1062,7 @@
           "time": "6:00 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 302,
+          "seatsAvailable": 301,
           "seatsTotal": 323,
           "priceRange": {
             "min": 630,
@@ -1830,7 +1141,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -1869,7 +1180,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -1908,7 +1219,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -1973,7 +1284,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -2012,7 +1323,7 @@
           "format": "LUXE 2D",
           "availability": "Available",
           "seatsAvailable": 24,
-          "seatsTotal": 30,
+          "seatsTotal": 24,
           "priceRange": {
             "min": 1180,
             "max": 1280
@@ -2115,31 +1426,18 @@
     "ambience-gurugram-kotak-imax": {
       "venueId": "ambience-gurugram-kotak-imax",
       "districtUrl": "https://www.district.in/movies/pepsi-pvr-ambience-ambience-mall-gurugram-in-gurgaon-CD1022302",
-      "fetchedAt": "2026-07-22T18:00:45.890Z",
+      "fetchedAt": "2026-07-22T18:30:44.531Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "10:55 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 150,
-          "seatsTotal": 208,
-          "priceRange": {
-            "min": 360,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
         {
           "date": "2026-07-22",
           "time": "11:20 PM",
           "format": "GOLD 2D",
           "availability": "Available",
-          "seatsAvailable": 27,
+          "seatsAvailable": 26,
           "seatsTotal": 36,
           "priceRange": {
             "min": 650,
-            "max": 800
+            "max": 1050
           },
           "cheapestSeatClassLabel": "RECLINER"
         },
@@ -2155,305 +1453,6 @@
             "max": 1200
           },
           "cheapestSeatClassLabel": "LOUNGER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:55 AM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 164,
-          "seatsTotal": 168,
-          "priceRange": {
-            "min": 210,
-            "max": 290
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:20 AM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 36,
-          "seatsTotal": 36,
-          "priceRange": {
-            "min": 500,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:45 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 164,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 950,
-            "max": 1150
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:45 AM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 156,
-          "seatsTotal": 158,
-          "priceRange": {
-            "min": 210,
-            "max": 290
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:30 AM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 49,
-          "seatsTotal": 56,
-          "priceRange": {
-            "min": 450,
-            "max": 450
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:20 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 163,
-          "seatsTotal": 168,
-          "priceRange": {
-            "min": 310,
-            "max": 460
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:50 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 32,
-          "seatsTotal": 36,
-          "priceRange": {
-            "min": 550,
-            "max": 550
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 89,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 950,
-            "max": 1050
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "2:15 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 158,
-          "seatsTotal": 158,
-          "priceRange": {
-            "min": 280,
-            "max": 400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:00 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 54,
-          "seatsTotal": 56,
-          "priceRange": {
-            "min": 560,
-            "max": 560
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:50 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 166,
-          "seatsTotal": 168,
-          "priceRange": {
-            "min": 310,
-            "max": 460
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:20 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 18,
-          "seatsTotal": 44,
-          "priceRange": {
-            "min": 550,
-            "max": 1000
-          },
-          "cheapestSeatClassLabel": "RECLINER PRIME"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 87,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 1000,
-            "max": 1150
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "5:45 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 156,
-          "seatsTotal": 158,
-          "priceRange": {
-            "min": 280,
-            "max": 400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:30 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 49,
-          "seatsTotal": 56,
-          "priceRange": {
-            "min": 560,
-            "max": 560
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:20 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 165,
-          "seatsTotal": 168,
-          "priceRange": {
-            "min": 340,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:50 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 26,
-          "seatsTotal": 44,
-          "priceRange": {
-            "min": 650,
-            "max": 800
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 38,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 1200,
-            "max": 1200
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:15 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 149,
-          "seatsTotal": 158,
-          "priceRange": {
-            "min": 310,
-            "max": 430
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:00 PM",
-          "format": "4DX-2D",
-          "availability": "Available",
-          "seatsAvailable": 48,
-          "seatsTotal": 56,
-          "priceRange": {
-            "min": 560,
-            "max": 560
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:50 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 168,
-          "seatsTotal": 168,
-          "priceRange": {
-            "min": 340,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:20 PM",
-          "format": "GOLD 2D",
-          "availability": "Available",
-          "seatsAvailable": 36,
-          "seatsTotal": 36,
-          "priceRange": {
-            "min": 650,
-            "max": 800
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 130,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 1000,
-            "max": 1200
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
         },
         {
           "date": "2026-07-24",
@@ -2486,7 +1485,7 @@
           "time": "1:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 135,
+          "seatsAvailable": 131,
           "seatsTotal": 362,
           "priceRange": {
             "min": 950,
@@ -2499,7 +1498,7 @@
           "time": "4:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 79,
+          "seatsAvailable": 76,
           "seatsTotal": 362,
           "priceRange": {
             "min": 1050,
@@ -2564,10 +1563,10 @@
           "time": "1:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 60,
+          "seatsAvailable": 51,
           "seatsTotal": 362,
           "priceRange": {
-            "min": 1100,
+            "min": 1300,
             "max": 1300
           },
           "cheapestSeatClassLabel": "CLASSIC"
@@ -2577,10 +1576,10 @@
           "time": "4:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 65,
+          "seatsAvailable": 48,
           "seatsTotal": 362,
           "priceRange": {
-            "min": 1100,
+            "min": 1300,
             "max": 1300
           },
           "cheapestSeatClassLabel": "CLASSIC"
@@ -2668,7 +1667,7 @@
           "time": "8:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 119,
+          "seatsAvailable": 117,
           "seatsTotal": 362,
           "priceRange": {
             "min": 1000,
@@ -2694,27 +1693,14 @@
     "inox-paras-nehru-place": {
       "venueId": "inox-paras-nehru-place",
       "districtUrl": "https://www.district.in/movies/inox-coca-cola-imax-paras-nehru-place-delhi-in-delhi-ncr-CD1018957",
-      "fetchedAt": "2026-07-22T18:00:51.818Z",
+      "fetchedAt": "2026-07-22T18:30:51.910Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "11:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 143,
-          "seatsTotal": 353,
-          "priceRange": {
-            "min": 520,
-            "max": 840
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
         {
           "date": "2026-07-23",
           "time": "9:15 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 231,
+          "seatsAvailable": 224,
           "seatsTotal": 353,
           "priceRange": {
             "min": 370,
@@ -2727,7 +1713,7 @@
           "time": "12:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 203,
+          "seatsAvailable": 202,
           "seatsTotal": 288,
           "priceRange": {
             "min": 520,
@@ -2753,7 +1739,7 @@
           "time": "7:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 125,
+          "seatsAvailable": 115,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -2805,7 +1791,7 @@
           "time": "12:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 256,
+          "seatsAvailable": 255,
           "seatsTotal": 288,
           "priceRange": {
             "min": 520,
@@ -2818,7 +1804,7 @@
           "time": "4:15 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 239,
+          "seatsAvailable": 234,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -2831,7 +1817,7 @@
           "time": "7:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 124,
+          "seatsAvailable": 127,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -2844,11 +1830,11 @@
           "time": "11:15 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 256,
+          "seatsAvailable": 247,
           "seatsTotal": 288,
           "priceRange": {
             "min": 520,
-            "max": 730
+            "max": 840
           },
           "cheapestSeatClassLabel": "EXECUTIVE"
         },
@@ -2948,7 +1934,7 @@
           "time": "9:15 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 170,
+          "seatsAvailable": 168,
           "seatsTotal": 353,
           "priceRange": {
             "min": 370,
@@ -2961,7 +1947,7 @@
           "time": "12:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 168,
+          "seatsAvailable": 154,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -3013,7 +1999,7 @@
     "inox-vishal-mall-rajouri": {
       "venueId": "inox-vishal-mall-rajouri",
       "districtUrl": "https://www.district.in/movies/inox-vishal-mall-rajouri-garden-new-delhi-in-delhi-ncr-CD1018962",
-      "fetchedAt": "2026-07-22T18:00:58.408Z",
+      "fetchedAt": "2026-07-22T18:30:57.986Z",
       "showtimes": [
         {
           "date": "2026-07-22",
@@ -3025,123 +2011,6 @@
           "priceRange": {
             "min": 700,
             "max": 1000
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:45 AM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 188,
-          "seatsTotal": 243,
-          "priceRange": {
-            "min": 550,
-            "max": 750
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:30 AM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 136,
-          "seatsTotal": 138,
-          "priceRange": {
-            "min": 260,
-            "max": 300
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 187,
-          "seatsTotal": 254,
-          "priceRange": {
-            "min": 700,
-            "max": 1000
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:00 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 134,
-          "seatsTotal": 138,
-          "priceRange": {
-            "min": 260,
-            "max": 300
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 182,
-          "seatsTotal": 254,
-          "priceRange": {
-            "min": 700,
-            "max": 1000
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:30 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 134,
-          "seatsTotal": 138,
-          "priceRange": {
-            "min": 300,
-            "max": 340
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:15 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 143,
-          "seatsTotal": 254,
-          "priceRange": {
-            "min": 700,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:00 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 138,
-          "seatsTotal": 138,
-          "priceRange": {
-            "min": 300,
-            "max": 340
-          },
-          "cheapestSeatClassLabel": "EXECUTIVE"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Available",
-          "seatsAvailable": 235,
-          "seatsTotal": 243,
-          "priceRange": {
-            "min": 700,
-            "max": 800
           },
           "cheapestSeatClassLabel": "EXECUTIVE"
         },
@@ -3202,7 +2071,7 @@
           "time": "3:45 PM",
           "format": "2D",
           "availability": "Available",
-          "seatsAvailable": 191,
+          "seatsAvailable": 189,
           "seatsTotal": 191,
           "priceRange": {
             "min": 370,
@@ -3319,7 +2188,7 @@
           "time": "4:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 185,
+          "seatsAvailable": 183,
           "seatsTotal": 243,
           "priceRange": {
             "min": 700,
@@ -3462,21 +2331,8 @@
     "inox-insignia-epicuria": {
       "venueId": "inox-insignia-epicuria",
       "districtUrl": "https://www.district.in/movies/inox-insignia-at-epicuria-nehru-place-new-delhi-in-delhi-ncr-CD1018958",
-      "fetchedAt": "2026-07-22T18:01:05.165Z",
+      "fetchedAt": "2026-07-22T18:31:04.130Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "11:00 PM",
-          "format": "INSIGNIA 2D",
-          "availability": "Available",
-          "seatsAvailable": 26,
-          "seatsTotal": 41,
-          "priceRange": {
-            "min": 650,
-            "max": 850
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
         {
           "date": "2026-07-23",
           "time": "9:00 AM",
@@ -3505,6 +2361,19 @@
         },
         {
           "date": "2026-07-23",
+          "time": "2:15 PM",
+          "format": "INSIGNIA 2D",
+          "availability": "Available",
+          "seatsAvailable": 35,
+          "seatsTotal": 35,
+          "priceRange": {
+            "min": 600,
+            "max": 600
+          },
+          "cheapestSeatClassLabel": "RECLINER"
+        },
+        {
+          "date": "2026-07-23",
           "time": "4:00 PM",
           "format": "INSIGNIA 2D",
           "availability": "Available",
@@ -3518,6 +2387,19 @@
         },
         {
           "date": "2026-07-23",
+          "time": "5:45 PM",
+          "format": "INSIGNIA 2D",
+          "availability": "Available",
+          "seatsAvailable": 35,
+          "seatsTotal": 35,
+          "priceRange": {
+            "min": 600,
+            "max": 600
+          },
+          "cheapestSeatClassLabel": "RECLINER"
+        },
+        {
+          "date": "2026-07-23",
           "time": "7:30 PM",
           "format": "INSIGNIA 2D",
           "availability": "Filling Fast",
@@ -3526,6 +2408,19 @@
           "priceRange": {
             "min": 650,
             "max": 1050
+          },
+          "cheapestSeatClassLabel": "RECLINER"
+        },
+        {
+          "date": "2026-07-23",
+          "time": "9:15 PM",
+          "format": "INSIGNIA 2D",
+          "availability": "Available",
+          "seatsAvailable": 35,
+          "seatsTotal": 35,
+          "priceRange": {
+            "min": 650,
+            "max": 850
           },
           "cheapestSeatClassLabel": "RECLINER"
         },
@@ -3547,21 +2442,8 @@
     "cinepolis-dlf-avenue-saket": {
       "venueId": "cinepolis-dlf-avenue-saket",
       "districtUrl": "https://www.district.in/movies/cinepolis-dlf-avenue-saket-new-delhi-in-delhi-ncr-CD1390",
-      "fetchedAt": "2026-07-22T18:01:11.627Z",
+      "fetchedAt": "2026-07-22T18:31:10.800Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "11:55 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 146,
-          "seatsTotal": 167,
-          "priceRange": {
-            "min": 280,
-            "max": 750
-          },
-          "cheapestSeatClassLabel": "NORMAL"
-        },
         {
           "date": "2026-07-23",
           "time": "9:15 AM",
@@ -3580,7 +2462,7 @@
           "time": "9:55 AM",
           "format": "2D",
           "availability": "Available",
-          "seatsAvailable": 157,
+          "seatsAvailable": 155,
           "seatsTotal": 167,
           "priceRange": {
             "min": 200,
@@ -3606,7 +2488,7 @@
           "time": "12:40 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 97,
+          "seatsAvailable": 91,
           "seatsTotal": 108,
           "priceRange": {
             "min": 800,
@@ -3619,7 +2501,7 @@
           "time": "1:40 PM",
           "format": "ONYX 2D",
           "availability": "Available",
-          "seatsAvailable": 141,
+          "seatsAvailable": 143,
           "seatsTotal": 157,
           "priceRange": {
             "min": 300,
@@ -3658,7 +2540,7 @@
           "time": "7:50 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 95,
+          "seatsAvailable": 93,
           "seatsTotal": 108,
           "priceRange": {
             "min": 800,
@@ -3710,21 +2592,8 @@
     "devgn-cinex-elan-epic": {
       "venueId": "devgn-cinex-elan-epic",
       "districtUrl": "https://www.district.in/movies/devgn-cinex-formerly-ny-elan-epic-gurugram-in-gurgaon-CD1029765",
-      "fetchedAt": "2026-07-22T18:01:17.644Z",
+      "fetchedAt": "2026-07-22T18:31:17.324Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "11:30 PM",
-          "format": "LASER DOLBY 2D",
-          "availability": "Available",
-          "seatsAvailable": 186,
-          "seatsTotal": 188,
-          "priceRange": {
-            "min": 270,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
         {
           "date": "2026-07-23",
           "time": "10:30 AM",
@@ -4107,7 +2976,7 @@
     "wave-cinemas-gurugram": {
       "venueId": "wave-cinemas-gurugram",
       "districtUrl": "https://www.district.in/movies/wave-cinemas-gurugram-in-gurgaon-CD1039102",
-      "fetchedAt": "2026-07-22T18:01:23.474Z",
+      "fetchedAt": "2026-07-22T18:31:23.585Z",
       "showtimes": [
         {
           "date": "2026-07-23",
@@ -4257,177 +3126,8 @@
     "directors-cut-mall-of-india-noida": {
       "venueId": "directors-cut-mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-directors-cut-dlf-mall-of-india-noida-in-delhi-ncr-CD1058603",
-      "fetchedAt": "2026-07-22T18:01:29.530Z",
+      "fetchedAt": "2026-07-22T18:31:30.026Z",
       "showtimes": [
-        {
-          "date": "2026-07-22",
-          "time": "10:50 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 25,
-          "seatsTotal": 34,
-          "priceRange": {
-            "min": 950,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:50 AM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 24,
-          "seatsTotal": 32,
-          "priceRange": {
-            "min": 500,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:35 AM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 71,
-          "seatsTotal": 74,
-          "priceRange": {
-            "min": 500,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:50 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 25,
-          "seatsTotal": 34,
-          "priceRange": {
-            "min": 600,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:55 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 68,
-          "seatsTotal": 87,
-          "priceRange": {
-            "min": 600,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:05 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 26,
-          "seatsTotal": 32,
-          "priceRange": {
-            "min": 600,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:10 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 23,
-          "seatsTotal": 34,
-          "priceRange": {
-            "min": 600,
-            "max": 800
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "5:15 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 60,
-          "seatsTotal": 87,
-          "priceRange": {
-            "min": 600,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "6:25 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 26,
-          "seatsTotal": 32,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:30 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 22,
-          "seatsTotal": 27,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:35 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 74,
-          "seatsTotal": 74,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:45 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 24,
-          "seatsTotal": 32,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:50 PM",
-          "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 27,
-          "seatsTotal": 27,
-          "priceRange": {
-            "min": 750,
-            "max": 950
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
         {
           "date": "2026-07-24",
           "time": "10:00 AM",
@@ -4784,99 +3484,8 @@
     "inox-pacific-mall-jasola": {
       "venueId": "inox-pacific-mall-jasola",
       "districtUrl": "https://www.district.in/movies/inox-pacific-mall-jasola-new-delhi-in-delhi-ncr-CD1018963",
-      "fetchedAt": "2026-07-22T18:01:36.506Z",
+      "fetchedAt": "2026-07-22T18:31:36.474Z",
       "showtimes": [
-        {
-          "date": "2026-07-23",
-          "time": "10:15 AM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 154,
-          "seatsTotal": 156,
-          "priceRange": {
-            "min": 220,
-            "max": 240
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:45 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 189,
-          "seatsTotal": 190,
-          "priceRange": {
-            "min": 260,
-            "max": 280
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:15 PM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 193,
-          "seatsTotal": 196,
-          "priceRange": {
-            "min": 260,
-            "max": 490
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "5:15 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 190,
-          "seatsTotal": 190,
-          "priceRange": {
-            "min": 260,
-            "max": 280
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:50 PM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 191,
-          "seatsTotal": 196,
-          "priceRange": {
-            "min": 310,
-            "max": 730
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:45 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 188,
-          "seatsTotal": 190,
-          "priceRange": {
-            "min": 310,
-            "max": 330
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:25 PM",
-          "format": "RECLINERS 2D",
-          "availability": "Available",
-          "seatsAvailable": 196,
-          "seatsTotal": 196,
-          "priceRange": {
-            "min": 310,
-            "max": 540
-          },
-          "cheapestSeatClassLabel": "CLUB"
-        },
         {
           "date": "2026-07-24",
           "time": "10:05 AM",
@@ -5194,135 +3803,18 @@
     "pvr-cinemagic-pitampura": {
       "venueId": "pvr-cinemagic-pitampura",
       "districtUrl": "https://www.district.in/movies/pvr-cinemagic-unity-one-elegante-nsp-pitampura-in-delhi-ncr-CD1102047",
-      "fetchedAt": "2026-07-22T18:01:43.173Z",
+      "fetchedAt": "2026-07-22T18:31:43.954Z",
       "showtimes": [
         {
           "date": "2026-07-22",
           "time": "11:50 PM",
           "format": "PXL 2D",
           "availability": "Available",
-          "seatsAvailable": 276,
+          "seatsAvailable": 274,
           "seatsTotal": 276,
           "priceRange": {
             "min": 300,
             "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "9:00 AM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 58,
-          "seatsTotal": 60,
-          "priceRange": {
-            "min": 499,
-            "max": 499
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "12:25 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 57,
-          "seatsTotal": 60,
-          "priceRange": {
-            "min": 600,
-            "max": 700
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "1:20 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 265,
-          "seatsTotal": 298,
-          "priceRange": {
-            "min": 300,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "3:00 PM",
-          "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 97,
-          "seatsTotal": 104,
-          "priceRange": {
-            "min": 300,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "4:50 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 270,
-          "seatsTotal": 298,
-          "priceRange": {
-            "min": 300,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "7:00 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 58,
-          "seatsTotal": 60,
-          "priceRange": {
-            "min": 700,
-            "max": 800
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "8:20 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 271,
-          "seatsTotal": 276,
-          "priceRange": {
-            "min": 300,
-            "max": 600
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "10:30 PM",
-          "format": "LUXE 2D",
-          "availability": "Available",
-          "seatsAvailable": 58,
-          "seatsTotal": 60,
-          "priceRange": {
-            "min": 500,
-            "max": 500
-          },
-          "cheapestSeatClassLabel": "RECLINER"
-        },
-        {
-          "date": "2026-07-23",
-          "time": "11:50 PM",
-          "format": "PXL 2D",
-          "availability": "Available",
-          "seatsAvailable": 276,
-          "seatsTotal": 276,
-          "priceRange": {
-            "min": 250,
-            "max": 500
           },
           "cheapestSeatClassLabel": "CLASSIC"
         },
@@ -5435,7 +3927,7 @@
           "time": "1:00 PM",
           "format": "PXL 2D",
           "availability": "Available",
-          "seatsAvailable": 276,
+          "seatsAvailable": 274,
           "seatsTotal": 276,
           "priceRange": {
             "min": 350,
@@ -5526,7 +4018,7 @@
           "time": "1:00 PM",
           "format": "PXL 2D",
           "availability": "Available",
-          "seatsAvailable": 276,
+          "seatsAvailable": 274,
           "seatsTotal": 276,
           "priceRange": {
             "min": 350,
@@ -5604,7 +4096,7 @@
     "new-us-cinemas-ghaziabad": {
       "venueId": "new-us-cinemas-ghaziabad",
       "districtUrl": "https://www.district.in/movies/new-us-cinemas-aditya-mall-ghaziabad-in-new-delhi-CD25281",
-      "fetchedAt": "2026-07-22T18:01:49.107Z",
+      "fetchedAt": "2026-07-22T18:31:50.823Z",
       "showtimes": [
         {
           "date": "2026-07-23",
@@ -5624,7 +4116,7 @@
           "time": "11:15 AM",
           "format": "EMINENCE CUT RECLINER 2D",
           "availability": "Available",
-          "seatsAvailable": 64,
+          "seatsAvailable": 60,
           "seatsTotal": 72,
           "priceRange": {
             "min": 250,
