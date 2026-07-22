@@ -1,19 +1,19 @@
 import { Star } from "lucide-react";
 
 interface ConstellationProps {
-  /** How many of the 4 screens have been answered (0-4). */
+  /** How many of the 3 screens have been answered (0-3). */
   filled: number;
 }
 
 /**
- * DESIGN.md §"The Helm": "Progress is a constellation: four stars, filling
- * as you answer." Four small stars, muted until answered, gold once
- * completed. Stays visible across all four Helm screens.
+ * DESIGN.md §"The Helm": "Progress is a constellation: stars, filling
+ * as you answer." Three small stars (one per Helm screen — locality, when,
+ * intent), muted until answered, gold once completed.
  */
 export function Constellation({ filled }: ConstellationProps) {
   return (
-    <div className="flex items-center gap-2" role="progressbar" aria-valuemin={0} aria-valuemax={4} aria-valuenow={filled}>
-      {[0, 1, 2, 3].map((i) => {
+    <div className="flex items-center gap-2" role="progressbar" aria-valuemin={0} aria-valuemax={3} aria-valuenow={filled}>
+      {[0, 1, 2].map((i) => {
         const isFilled = i < filled;
         return (
           <Star

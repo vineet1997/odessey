@@ -1,23 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { buildRecommendation, type MapVenue } from "../lib/buildRecommendation";
-import type { Locality } from "../fixtures/localities";
-import type { TimeBand } from "./helm/types";
+import { buildRecommendation, type DossierEntry } from "../lib/buildRecommendation";
+import type { Origin, WhenChoice } from "./helm/types";
 import type { IntentId } from "../scoring/score";
 import type { RecommendationResult } from "../types/recommendation";
 
 interface CrossingProps {
-  locality: Locality;
-  timeBand: TimeBand;
+  origin: Origin;
+  when: WhenChoice;
   intentId: IntentId;
-  /** Fires once a real recommendation is computed. mapVenues is every scored
+  /** Fires once a real recommendation is computed. dossier is every scored
    * candidate (not just the winner/runner-up) — the data the explore map draws from. */
-  onComplete: (result: RecommendationResult, mapVenues: MapVenue[]) => void;
+  onComplete: (result: RecommendationResult, dossier: DossierEntry[]) => void;
   /** Fires if nothing could be computed — a real, honest failure, not silently swallowed. */
   onError: (reason: string) => void;
 }
 
-const LOG_STEPS = ["CHECKING SCREENS", "TONIGHT'S SHOWS", "LIVE TRAVEL TIMES", "FARES"];
+const WHEN_LOG_LABEL: Record<WhenChoice, string> = {
+  tonight: "TONIGHT'S SHOWS",
+  tomorrow: "TOMORROW'S SHOWS",
+  weekend: "WEEKEND SHOWS",
+};
 
 // The crossing now does real work (src/lib/buildRecommendation.ts — real venue/showtime
 // data plus a live call to the routing proxy), per DESIGN.md's "duration = actual latency"
@@ -55,24 +58,26 @@ function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T): Pr
  * pass wires in real data, those steps now correspond to real work: reading
  * venue/showtime data and calling the live routing proxy per candidate venue.
  */
-export function Crossing({ locality, timeBand, intentId, onComplete, onError }: CrossingProps) {
+export function Crossing({ origin, when, intentId, onComplete, onError }: CrossingProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const pathRef = useRef<SVGPathElement>(null);
   const [reduceMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
+  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "LIVE TRAVEL TIMES", "FARES"];
+
   useEffect(() => {
     let cancelled = false;
 
     const stepTimer = window.setInterval(() => {
-      setStepIndex((i) => Math.min(i + 1, LOG_STEPS.length - 1));
+      setStepIndex((i) => Math.min(i + 1, logSteps.length - 1));
     }, LOG_STEP_INTERVAL_MS);
 
     const minVisualWait = new Promise<void>((resolve) => setTimeout(resolve, MIN_VISUAL_DURATION_MS));
 
     const computation = withTimeout(
-      buildRecommendation(locality, timeBand, intentId),
+      buildRecommendation(origin, when, intentId),
       FETCH_TIMEOUT_MS,
       () => ({ ok: false as const, reason: "Taking too long to check live travel times. Try again." })
     );
@@ -80,7 +85,7 @@ export function Crossing({ locality, timeBand, intentId, onComplete, onError }: 
     Promise.all([computation, minVisualWait]).then(([outcome]) => {
       if (cancelled) return;
       if (outcome.ok) {
-        onComplete(outcome.result, outcome.mapVenues);
+        onComplete(outcome.result, outcome.dossier);
       } else {
         onError(outcome.reason);
       }
@@ -91,7 +96,7 @@ export function Crossing({ locality, timeBand, intentId, onComplete, onError }: 
       window.clearInterval(stepTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locality, timeBand, intentId]);
+  }, [origin, when, intentId]);
 
   useEffect(() => {
     if (reduceMotion) return; // plain ticking log only, no line-draw motion
@@ -136,7 +141,7 @@ export function Crossing({ locality, timeBand, intentId, onComplete, onError }: 
       </div>
 
       <div className="flex flex-col items-center gap-2 font-mono text-[12px] uppercase tracking-widest text-ink-muted">
-        {LOG_STEPS.map((step, i) => (
+        {logSteps.map((step, i) => (
           <span
             key={step}
             className={i <= stepIndex ? "text-gold-bright" : "text-ink-muted opacity-40"}

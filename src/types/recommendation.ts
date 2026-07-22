@@ -54,4 +54,15 @@ export interface RecommendationResult {
   score: ScoreResult;
   /** The winning venue's real district.in page — where "Book on District" actually goes. */
   districtUrl: string;
+  /** "Worth Every Rupee" only — present when the winning venue also fielded a
+   * meaningfully different-experience format (>=15pt gap) at a different
+   * price. Not rendered yet — a later pass builds the UI for this. */
+  valueComparison?: {
+    premium: { format: string; priceLabel: string; experienceScore: number; showtime: string };
+    budget: { format: string; priceLabel: string; experienceScore: number; showtime: string };
+    priceDiffRupees: number;
+  };
+  /** e.g. "132 OF 381 SEATS LEFT · FILLING FAST" — present only when the
+   * winning show carries live seat counts. Not rendered yet. */
+  seatsLine?: string;
 }

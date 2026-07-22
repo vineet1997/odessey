@@ -1,13 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { MapVenue } from "../lib/buildRecommendation";
-import type { Locality } from "../fixtures/localities";
+import type { DossierEntry } from "../lib/buildRecommendation";
+import type { Origin } from "./helm/types";
 
 interface MapExplorerProps {
-  locality: Locality;
-  venues: MapVenue[];
+  origin: Origin;
+  venues: DossierEntry[];
 }
 
 /**
@@ -17,6 +17,10 @@ interface MapExplorerProps {
  * ranked — plotted with the same numbers the scoring engine used. The point
  * isn't "here's a map"; it's "here's the data, verify it yourself."
  *
+ * `venues` is the full dossier (every scored venue x format candidate) —
+ * one marker per VENUE is drawn, using that venue's best-scoring candidate,
+ * since the map plots places, not format variants.
+ *
  * Built on Leaflet + free CartoDB dark tiles rather than Google's Maps
  * JavaScript API deliberately: our existing Google key is IP-restricted and
  * server-only (api/route.ts) by design — exposing it to the browser for an
@@ -25,12 +29,22 @@ interface MapExplorerProps {
  * was built to avoid. Leaflet needs no key, costs nothing, and gives full
  * control over marker styling, which a Google embed wouldn't.
  */
-export function MapExplorer({ locality, venues }: MapExplorerProps) {
-  if (venues.length === 0) return null;
+export function MapExplorer({ origin, venues }: MapExplorerProps) {
+  // One marker per venue — the dossier already sorts by totalScore desc, so
+  // the first entry seen for a venueId is that venue's best candidate.
+  const bestPerVenue = useMemo(() => {
+    const seen = new Map<string, DossierEntry>();
+    for (const entry of venues) {
+      if (!seen.has(entry.venueId)) seen.set(entry.venueId, entry);
+    }
+    return [...seen.values()];
+  }, [venues]);
+
+  if (bestPerVenue.length === 0) return null;
 
   const bounds = L.latLngBounds([
-    [locality.lat, locality.lng],
-    ...venues.map((v) => [v.coords.lat, v.coords.lng] as [number, number]),
+    [origin.lat, origin.lng],
+    ...bestPerVenue.map((v) => [v.coords.lat, v.coords.lng] as [number, number]),
   ]);
 
   return (
@@ -49,23 +63,23 @@ export function MapExplorer({ locality, venues }: MapExplorerProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
 
-        <Marker position={[locality.lat, locality.lng]} icon={homeIcon}>
+        <Marker position={[origin.lat, origin.lng]} icon={homeIcon}>
           <Popup>
-            <MapPopupContent title={locality.name} lines={["Your starting point"]} />
+            <MapPopupContent title={origin.label} lines={["Your starting point"]} />
           </Popup>
         </Marker>
 
-        {venues.map((venue) => (
+        {bestPerVenue.map((venue) => (
           <Marker
-            key={venue.id}
+            key={venue.venueId}
             position={[venue.coords.lat, venue.coords.lng]}
             icon={venueIcon(venue)}
           >
             <Popup>
               <MapPopupContent
-                title={venue.name}
+                title={venue.venueName}
                 lines={[
-                  venue.formatChip,
+                  venue.format,
                   `Experience score: ${venue.experienceScore}/100`,
                   `From ₹${venue.priceRupees.toLocaleString("en-IN")}`,
                   `${venue.distanceKm} km · ${venue.durationMinutes} min away`,
@@ -164,7 +178,7 @@ const homeIcon = L.divIcon({
   iconAnchor: [7, 7],
 });
 
-function venueIcon(venue: MapVenue): L.DivIcon {
+function venueIcon(venue: DossierEntry): L.DivIcon {
   if (venue.isWinner) return dotIcon("#c9a227", 20); // --gold
   if (venue.isRunnerUp) return dotIcon("#5fa8ad", 16); // --sea-bright
   return dotIcon("#8b94a3", 10); // --ink-muted

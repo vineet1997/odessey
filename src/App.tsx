@@ -6,11 +6,10 @@ import { Helm } from "./components/Helm";
 import { Crossing } from "./components/Crossing";
 import { ResultCard } from "./components/ResultCard";
 import { MapExplorer } from "./components/MapExplorer";
-import { LOCALITIES } from "./fixtures/localities";
 import { INTENTS, type IntentId } from "./scoring/score";
 import type { HelmAnswers } from "./components/helm/types";
 import type { RecommendationResult } from "./types/recommendation";
-import type { MapVenue } from "./lib/buildRecommendation";
+import type { DossierEntry } from "./lib/buildRecommendation";
 
 type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
@@ -24,7 +23,7 @@ function App() {
   );
   const [answers, setAnswers] = useState<HelmAnswers | null>(null);
   const [result, setResult] = useState<RecommendationResult | null>(null);
-  const [mapVenues, setMapVenues] = useState<MapVenue[]>([]);
+  const [dossier, setDossier] = useState<DossierEntry[]>([]);
   const [errorReason, setErrorReason] = useState<string | null>(null);
   const [exploreOpen, setExploreOpen] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -81,27 +80,14 @@ function App() {
   }
 
   if (stage === "crossing" && answers) {
-    // Look up the full Locality (with coordinates) the Helm's locality
-    // screen only returns a name for — the routing proxy needs coordinates.
-    const locality = LOCALITIES.find((l) => l.name === answers.locality);
-    if (!locality) {
-      // Shouldn't happen (the Helm only offers names from this same list),
-      // but if it ever does, fail honestly rather than silently guess coordinates.
-      return (
-        <ErrorScreen
-          reason={`Unrecognized locality "${answers.locality}".`}
-          onRetry={startOver}
-        />
-      );
-    }
     return (
       <Crossing
-        locality={locality}
-        timeBand={answers.timeBand}
+        origin={answers.origin}
+        when={answers.when}
         intentId={answers.intentId}
-        onComplete={(computed, venues) => {
+        onComplete={(computed, dossierEntries) => {
           setResult(computed);
-          setMapVenues(venues);
+          setDossier(dossierEntries);
           setStage("result");
         }}
         onError={(reason) => {
@@ -117,7 +103,7 @@ function App() {
   }
 
   if (stage === "result" && result && answers) {
-    const locality = LOCALITIES.find((l) => l.name === answers.locality);
+    const venueCount = new Set(dossier.map((d) => d.venueId)).size;
     return (
       <div className="flex min-h-screen w-full flex-col items-center gap-5 bg-bg px-4 py-10">
         <div ref={resultRef} className="w-full">
@@ -130,19 +116,19 @@ function App() {
         <div className="flex w-full max-w-[480px] flex-col items-center gap-4">
           <IntentSwitcher active={answers.intentId} onSwitch={switchIntent} />
 
-          {locality && mapVenues.length > 0 && (
+          {dossier.length > 0 && (
             <button
               type="button"
               onClick={() => setExploreOpen((open) => !open)}
               className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border py-2.5 font-mono text-[11px] uppercase tracking-widest text-gold-bright transition-colors duration-150 hover:border-gold/40"
             >
               {exploreOpen ? <ChevronUp size={14} strokeWidth={1.75} /> : <MapIcon size={14} strokeWidth={1.75} />}
-              {exploreOpen ? "Hide the map" : `See all ${mapVenues.length} venues we checked`}
+              {exploreOpen ? "Hide the map" : `See all ${venueCount} venues we checked`}
             </button>
           )}
 
-          {exploreOpen && locality && (
-            <MapExplorer locality={locality} venues={mapVenues} />
+          {exploreOpen && (
+            <MapExplorer origin={answers.origin} venues={dossier} />
           )}
 
           <button
@@ -163,7 +149,7 @@ function App() {
   return <Helm onComplete={(helmAnswers) => { setAnswers(helmAnswers); setStage("crossing"); }} />;
 }
 
-/** Re-run the same locality/day/time-band under a different intent, without
+/** Re-run the same origin/when under a different intent, without
  * re-entering the Helm — DESIGN.md's "intents switchable in place... without
  * re-entering the flow" (originally scoped for tabs on the card itself; built
  * here as a control just below it instead, to keep the card clean). */
