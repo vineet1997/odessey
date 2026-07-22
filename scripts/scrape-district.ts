@@ -13,8 +13,16 @@
  * Path inside that JSON (confirmed against real pages):
  *   json.props.pageProps.data.serverState[cinemaId].arrangedSessions
  *     -> array of { entityName: <movie title>, sessions: [...] }
- *   each session: { showTime: "YYYY-MM-DDTHH:MM" (24h, local/IST), scrnFmt, premiumLabel,
- *                    areas: [{ label, price, seatStatus }, ...] }
+ *   each session: { showTime: "YYYY-MM-DDTHH:MM" (24h, UTC — NOT local/IST, confirmed by
+ *                    comparing the Priya venue page's embedded JSON against its rendered
+ *                    HTML: embedded 07:45/11:15/14:45/18:15 vs. rendered 1:15 PM/4:45 PM/
+ *                    8:15 PM/11:45 PM — exactly +5:30 IST offset on each), scrnFmt,
+ *                    premiumLabel, areas: [{ label, price, seatStatus }, ...] }
+ *
+ * Multi-day: passing `?fromdate=YYYY-MM-DD` to a venue URL returns that date's sessions in
+ * the same __NEXT_DATA__ shape (the bare URL returns "today" per District's own clock). This
+ * script fetches today/tomorrow/day-after (computed in IST, host-timezone independent) for
+ * every venue and merges the results.
  *
  * Run: npm run scrape:district
  */
@@ -33,6 +41,12 @@ const USER_AGENT =
 const FETCH_TIMEOUT_MS = 15_000;
 const DELAY_BETWEEN_REQUESTS_MS = 750; // polite pacing per BRIEF.md's "low-volume scraper" posture
 const MOVIE_TITLE = "The Odyssey";
+const IST_OFFSET_MS = 330 * 60 * 1000; // +5:30
+// 5 IST dates: today through +4 — enough to always cover the coming
+// weekend (the "This weekend" Helm option needs Sat/Sun data even when
+// opened on a Tuesday). District publishes ~5 sessionDates; fromdate
+// pages beyond what's published just return zero sessions, harmlessly.
+const DAYS_PER_VENUE = 5;
 
 /**
  * district.in cinema page URL for each of the 15 curated venues (data/venues-curated.json ids).
@@ -89,10 +103,10 @@ interface CuratedVenue {
 }
 
 interface Showtime {
-  date: string; // "YYYY-MM-DD" — District's "today" rolls over at some point overnight,
-  // so a scrape run late at night can legitimately return tomorrow's schedule; keeping
-  // the date explicit means nothing downstream has to assume "today" incorrectly.
-  time: string; // e.g. "6:15 PM"
+  date: string; // "YYYY-MM-DD", IST — converted from District's UTC showTime. Kept explicit
+  // (rather than assumed) because late-night sessions fetched under one `?fromdate=` can
+  // convert to the following IST date (see IST conversion helpers below).
+  time: string; // e.g. "6:15 PM", IST
   format: string; // e.g. "IMAX 2D", "ONYX 2D", "4DX-2D"
   /** District's own whole-show aggregate label (session.seatStatus), e.g. "Filling Fast" — NOT
    * a worst-case-across-seat-classes computation. That approach was tried and rejected: a show
@@ -147,6 +161,41 @@ interface DistrictArrangedEntity {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+
+/**
+ * Converts a District `showTime` string ("YYYY-MM-DDTHH:MM", UTC — see file header) into its
+ * IST calendar date and time-of-day. Uses Date.UTC()/getUTC*() exclusively so the result is
+ * identical regardless of the host machine's local timezone (GitHub Actions runners are UTC).
+ */
+function utcShowTimeToIst(showTime: string): { date: string; hhmm: string } {
+  const [datePart, timePart] = showTime.split("T");
+  const [y, mo, d] = datePart.split("-").map((s) => parseInt(s, 10));
+  const [h, mi] = timePart.split(":").map((s) => parseInt(s, 10));
+  const utcMs = Date.UTC(y, mo - 1, d, h, mi);
+  const istMs = utcMs + IST_OFFSET_MS;
+  const ist = new Date(istMs);
+  const date = `${ist.getUTCFullYear()}-${pad2(ist.getUTCMonth() + 1)}-${pad2(ist.getUTCDate())}`;
+  const hhmm = `${pad2(ist.getUTCHours())}:${pad2(ist.getUTCMinutes())}`;
+  return { date, hhmm };
+}
+
+/**
+ * Returns the current IST calendar date ("YYYY-MM-DD") plus `count - 1` subsequent IST dates,
+ * computed from the current UTC instant + IST offset so it's host-timezone independent.
+ */
+function istDateSequence(count: number): string[] {
+  const nowIstMs = Date.now() + IST_OFFSET_MS;
+  const dates: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(nowIstMs + i * 24 * 60 * 60 * 1000);
+    dates.push(`${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`);
+  }
+  return dates;
 }
 
 async function fetchHtml(url: string): Promise<string> {
@@ -217,7 +266,9 @@ function buildCheapestSeatClassLabel(session: DistrictSession): string | null {
   return cheapest.label ?? null;
 }
 
-function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
+type ShowtimeWithSortKey = Showtime & { _sortKey: string };
+
+function parseShowtimesFromNextData(nextData: unknown): ShowtimeWithSortKey[] {
   // Defensive traversal — district.in's page shape isn't a public contract, so every
   // step is optional-chained; anything missing just means "no showtimes found", not a crash.
   const data = (nextData as any)?.props?.pageProps?.data;
@@ -227,7 +278,7 @@ function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
   }
 
   const cinemaEntries = Object.values(serverState) as any[];
-  const showtimes: Showtime[] = [];
+  const showtimes: ShowtimeWithSortKey[] = [];
 
   for (const entry of cinemaEntries) {
     const arranged: DistrictArrangedEntity[] = entry?.arrangedSessions ?? [];
@@ -238,7 +289,8 @@ function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
       for (const session of movie.sessions ?? []) {
         const showTime = session.showTime;
         if (!showTime || !showTime.includes("T")) continue;
-        const [date, hhmm] = showTime.split("T");
+        // showTime is UTC (see file header) — convert to IST before deriving date/time.
+        const { date, hhmm } = utcShowTimeToIst(showTime);
         showtimes.push({
           date,
           time: formatTime24hTo12h(hhmm),
@@ -248,35 +300,51 @@ function parseShowtimesFromNextData(nextData: unknown): Showtime[] {
           seatsTotal: typeof session.total === "number" ? session.total : null,
           priceRange: buildPriceRange(session),
           cheapestSeatClassLabel: buildCheapestSeatClassLabel(session),
-          _sortKey: showTime, // ISO "YYYY-MM-DDTHH:MM" sorts correctly as a plain string
-        } as Showtime & { _sortKey: string });
+          _sortKey: `${date}T${hhmm}`, // IST instant as "YYYY-MM-DDTHH:MM" — sorts correctly lexicographically
+        } as ShowtimeWithSortKey);
       }
     }
   }
 
-  // Sort by date+time (the raw ISO showTime string sorts correctly lexicographically),
-  // then strip the internal sort key back out before returning.
-  showtimes.sort((a, b) => {
-    const aKey = (a as unknown as { _sortKey: string })._sortKey;
-    const bKey = (b as unknown as { _sortKey: string })._sortKey;
-    return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
-  });
-  for (const s of showtimes) delete (s as unknown as { _sortKey?: string })._sortKey;
-
+  // Sorting/deduping/stripping the internal sort key happens once, after merging this list
+  // with the other IST-date fetches for the same venue — see mergeDedupeSortShowtimes().
   return showtimes;
 }
 
-async function scrapeVenue(venueId: string, url: string): Promise<VenueResult> {
-  const fetchedAt = new Date().toISOString();
-  try {
-    const html = await fetchHtml(url);
-    const nextData = extractNextData(html);
-    const showtimes = parseShowtimesFromNextData(nextData);
-    return { venueId, districtUrl: url, fetchedAt, showtimes };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { venueId, districtUrl: url, fetchedAt, showtimes: [], error: message };
+/**
+ * Merges the showtime lists from a venue's multiple date fetches (today/tomorrow/day-after),
+ * deduping same date+time+format sessions that can appear twice (e.g. a late-night IST
+ * rollover session returned by both the bare "today" fetch and the next day's `?fromdate=`
+ * fetch), sorts by the converted IST instant, then strips the internal sort key.
+ */
+function mergeDedupeSortShowtimes(lists: ShowtimeWithSortKey[][]): Showtime[] {
+  const byKey = new Map<string, ShowtimeWithSortKey>();
+  for (const list of lists) {
+    for (const s of list) {
+      const key = `${s.date}|${s.time}|${s.format}`;
+      if (!byKey.has(key)) byKey.set(key, s);
+    }
   }
+  const merged = Array.from(byKey.values());
+  merged.sort((a, b) => (a._sortKey < b._sortKey ? -1 : a._sortKey > b._sortKey ? 1 : 0));
+  return merged.map(({ _sortKey, ...rest }) => rest);
+}
+
+/** Builds the URL for one IST date: bare venue URL for "today", `?fromdate=` otherwise. */
+function buildDateUrl(baseUrl: string, istDate: string, isToday: boolean): string {
+  return isToday ? baseUrl : `${baseUrl}?fromdate=${istDate}`;
+}
+
+async function fetchVenueDate(url: string): Promise<ShowtimeWithSortKey[]> {
+  const html = await fetchHtml(url);
+  const nextData = extractNextData(html);
+  return parseShowtimesFromNextData(nextData);
+}
+
+interface DateFetchTask {
+  istDate: string;
+  isToday: boolean;
+  url: string;
 }
 
 async function main() {
@@ -284,16 +352,20 @@ async function main() {
   const parsed = JSON.parse(raw);
   const venues: CuratedVenue[] = parsed.shortlist ?? [];
 
+  const istDates = istDateSequence(DAYS_PER_VENUE);
+  console.log(`IST dates to fetch per venue: ${istDates.join(", ")}`);
+
   const results: Record<string, VenueResult> = {};
   let ok = 0;
   let failed = 0;
   let unresolved = 0;
 
-  for (let i = 0; i < venues.length; i++) {
-    const venue = venues[i];
-    const url = DISTRICT_URLS[venue.id];
-
-    if (!url) {
+  // Flatten per-venue date tasks up front so pacing (the sleep between requests) applies
+  // uniformly across all ~45 requests, not just between venues.
+  const venueTasks: { venue: CuratedVenue; baseUrl: string; tasks: DateFetchTask[] }[] = [];
+  for (const venue of venues) {
+    const baseUrl = DISTRICT_URLS[venue.id];
+    if (!baseUrl) {
       unresolved++;
       results[venue.id] = {
         venueId: venue.id,
@@ -305,27 +377,63 @@ async function main() {
       console.log(`[${venue.id}] SKIPPED - no URL resolved`);
       continue;
     }
+    const tasks: DateFetchTask[] = istDates.map((istDate, idx) => ({
+      istDate,
+      isToday: idx === 0,
+      url: buildDateUrl(baseUrl, istDate, idx === 0),
+    }));
+    venueTasks.push({ venue, baseUrl, tasks });
+  }
 
-    console.log(`[${venue.id}] fetching ${url}`);
-    const result = await scrapeVenue(venue.id, url);
-    results[venue.id] = result;
+  const totalFetches = venueTasks.reduce((sum, v) => sum + v.tasks.length, 0);
+  let fetchIndex = 0;
 
-    if (result.error) {
-      failed++;
-      console.log(`[${venue.id}] FAILED - ${result.error}`);
-    } else if (result.showtimes.length === 0) {
-      console.log(`[${venue.id}] OK - 0 Odyssey showtimes found on page`);
-      ok++;
-    } else {
-      console.log(`[${venue.id}] OK - ${result.showtimes.length} showtimes`);
-      ok++;
+  for (const { venue, baseUrl, tasks } of venueTasks) {
+    const fetchedAt = new Date().toISOString();
+    const successLists: ShowtimeWithSortKey[][] = [];
+    const errors: string[] = [];
+
+    for (const task of tasks) {
+      console.log(`[${venue.id}] fetching (${task.istDate}) ${task.url}`);
+      try {
+        const showtimes = await fetchVenueDate(task.url);
+        successLists.push(showtimes);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`${task.istDate}: ${message}`);
+        console.log(`[${venue.id}] WARNING - fetch for ${task.istDate} failed: ${message}`);
+      }
+
+      fetchIndex++;
+      // Polite pacing between requests — not yet on a cron, but still a low-volume scraper per BRIEF.md.
+      if (fetchIndex < totalFetches) {
+        await sleep(DELAY_BETWEEN_REQUESTS_MS);
+      }
     }
 
-    // Polite pacing between requests — not yet on a cron, but still a low-volume scraper per BRIEF.md.
-    if (i < venues.length - 1) {
-      await sleep(DELAY_BETWEEN_REQUESTS_MS);
+    if (successLists.length === 0) {
+      // Every date fetch for this venue failed — that's the only case that sets venue-level error.
+      failed++;
+      results[venue.id] = {
+        venueId: venue.id,
+        districtUrl: baseUrl,
+        fetchedAt,
+        showtimes: [],
+        error: errors.join("; "),
+      };
+      console.log(`[${venue.id}] FAILED - all ${tasks.length} date fetches failed`);
+    } else {
+      ok++;
+      const showtimes = mergeDedupeSortShowtimes(successLists);
+      results[venue.id] = { venueId: venue.id, districtUrl: baseUrl, fetchedAt, showtimes };
+      const partial = errors.length > 0 ? ` (${errors.length}/${tasks.length} date fetches failed)` : "";
+      console.log(`[${venue.id}] OK - ${showtimes.length} showtimes${partial}`);
     }
   }
+
+  const datesCovered = Array.from(
+    new Set(Object.values(results).flatMap((r) => r.showtimes.map((s) => s.date)))
+  ).sort();
 
   const output = {
     // Documented output shape:
@@ -334,6 +442,8 @@ async function main() {
       generatedAt: new Date().toISOString(),
       movieTitle: MOVIE_TITLE,
       source: "district.in (__NEXT_DATA__ embedded session JSON)",
+      timezone: "IST (converted from District's UTC showTime fields)",
+      datesCovered,
       totalVenues: venues.length,
       ok,
       failed,
