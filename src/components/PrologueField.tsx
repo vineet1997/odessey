@@ -46,7 +46,9 @@ export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueFi
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const mobile = window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
-    const TILE = mobile ? 22 : 16;
+    // Mobile tiles are larger in SOURCE px so they don't end up smaller
+    // on screen than desktop's (phone cover-scale shrinks everything).
+    const TILE = mobile ? 26 : 16;
 
     const image = new Image();
     image.decoding = "async";
@@ -179,13 +181,18 @@ export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueFi
       const dOff = state.prevOffset < 0 ? 0 : offset - state.prevOffset;
       state.prevOffset = offset;
 
-      const radius = mobile ? 150 : 190;
+      const radius = mobile ? 120 : 190;
       const pointerLive = !reduceMotion && pointer.active && time - pointer.lastMove < 900;
       const speed = clamp(Math.hypot(pointer.vx, pointer.vy) / 34, 0, 1.6);
       pointer.vx *= 0.9;
       pointer.vy *= 0.9;
 
-      if (!reduceMotion && Math.abs(dOff) > 1.5) kickVisible(dOff, m, offset);
+      // Scroll-shatter is desktop-only. On a phone, scrolling IS a finger
+      // drag, so the kick storm would fire for the whole momentum glide —
+      // thousands of tile draws/frame on hardware that can't absorb them
+      // (the reference site makes the same call: on mobile the shatter is
+      // a touch effect, the pan itself stays a single cheap drawImage).
+      if (!reduceMotion && !mobile && Math.abs(dOff) > 1.5) kickVisible(dOff, m, offset);
       if (pointerLive) activateAroundPointer(radius, m, offset);
 
       // Base pass: the whole settled image in one draw call.
