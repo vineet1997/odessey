@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { INTENTS } from "../scoring/score";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import type { DossierEntry } from "../lib/buildRecommendation";
 import type { Origin } from "./helm/types";
 import type { RecommendationResult } from "../types/recommendation";
@@ -10,6 +9,7 @@ interface DossierProps {
   result: RecommendationResult;
   dossier: DossierEntry[];
   origin: Origin;
+  onStartOver: () => void;
 }
 
 /**
@@ -21,17 +21,9 @@ interface DossierProps {
  * Voice rule throughout: opinions in serif (italic for verdicts), evidence
  * in mono (uppercase, tracking-widest) — same as ResultCard.
  */
-export function Dossier({ result, dossier, origin }: DossierProps) {
+export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) {
   const [researchOpen, setResearchOpen] = useState(false);
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  const weights = INTENTS[result.score.intent];
-  const dimensionRows: { label: string; value: number; weight: number }[] = [
-    { label: "EXPERIENCE", value: result.score.dimensions.experience, weight: weights.experience },
-    { label: "COST", value: result.score.dimensions.cost, weight: weights.cost },
-    { label: "TIME", value: result.score.dimensions.time, weight: weights.time },
-    { label: "WAY HOME", value: result.score.dimensions.feasibility, weight: weights.feasibility },
-  ];
-
   const distinctAlternatives = useMemo(() => {
     const seenVenueIds = new Set<string>([result.score.venueId]);
     const alternatives: DossierEntry[] = [];
@@ -45,7 +37,7 @@ export function Dossier({ result, dossier, origin }: DossierProps) {
   }, [dossier, result.score.venueId]);
 
   return (
-    <div className="flex w-full max-w-[480px] flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       {/* a. Section header — the honesty numbers stay visible even when the
           deeper audit trail is collapsed. */}
       <div className="flex items-center justify-between border-t border-border pt-4 font-mono text-[12px]">
@@ -58,55 +50,44 @@ export function Dossier({ result, dossier, origin }: DossierProps) {
       {/* b. Value comparison block — Worth Every Rupee only, when it fires */}
       {result.valueComparison && <ValueComparisonBlock valueComparison={result.valueComparison} />}
 
-      {/* c. Winner dimension bars */}
-      <div className="flex flex-col gap-2">
-        <div className="font-mono text-[12px] text-ink-muted">WHY {result.venueName.toUpperCase()} WON</div>
-        <div className="flex flex-col gap-2">
-          {dimensionRows.map((row) => (
-            <div key={row.label} className="flex items-center gap-3">
-              <span className="w-24 shrink-0 font-mono text-[11px] text-ink-muted">{row.label}</span>
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-1 rounded-full bg-gold"
-                  style={{ width: `${Math.round(row.value * 100)}%` }}
-                />
-              </div>
-              <span className="font-mono text-[11px] text-ink-muted">×{row.weight.toFixed(2)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* d. A concise, venue-distinct alternative set. The result card
+      {/* c. A concise, venue-distinct alternative set. The result card
           already owns the verdict; this is enough context to make it feel
           compared without immediately dumping every show on the page. */}
       {distinctAlternatives.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <div className="font-mono text-[12px] text-ink-muted">THE NEXT BEST PLANS</div>
-          {distinctAlternatives.map((entry) => (
-            <AlternativeRow key={entry.planId} entry={entry} />
+        <section aria-labelledby="shortlist-heading" data-testid="next-best-shortlist">
+          <div className="mb-4 flex items-baseline justify-between gap-4">
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-gold-bright">The shortlist</p>
+              <p id="shortlist-heading" className="mt-2 font-body text-[1.35rem] leading-none text-ink">Next-best plans</p>
+            </div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-muted">Ranked after the pick</p>
+          </div>
+          <div className="divide-y divide-border border-y border-border">
+          {distinctAlternatives.map((entry, index) => (
+            <AlternativeLedgerRow key={entry.planId} entry={entry} rank={index + 2} />
           ))}
-        </div>
+          </div>
+        </section>
       )}
 
-      {/* e. Progressive audit trail: map + every scored show plan. */}
+      {/* d. Progressive audit trail: map + every scored show plan. */}
       <button
         type="button"
         onClick={() => setResearchOpen((open) => !open)}
         aria-expanded={researchOpen}
         aria-controls="full-research"
-        className="flex min-h-[52px] w-full cursor-pointer items-center justify-between rounded-md border border-border px-4 text-left font-mono text-[11px] uppercase tracking-widest text-gold-bright transition-colors duration-150 hover:border-gold/40"
+        className="group flex min-h-[4.75rem] w-full cursor-pointer items-center justify-between border-y border-border px-0 text-left transition-all duration-150 hover:bg-[linear-gradient(90deg,rgba(201,162,39,0.05),transparent_70%)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
       >
         <span className="flex flex-col gap-1">
-          <span>{researchOpen ? "Close full research" : "Explore full research"}</span>
-          <span className="text-[10px] text-ink-muted">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">{researchOpen ? "Close the full ledger" : "Open the full ledger"}</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.13em] text-ink-muted">
             MAP · {result.provenance.plansScored} RANKED PLANS · EVERY VIABLE SHOW
           </span>
         </span>
         <ChevronDown
           size={16}
           strokeWidth={1.5}
-          className={`shrink-0 transition-transform duration-150 ${researchOpen ? "rotate-180" : ""}`}
+          className={`shrink-0 text-gold-bright transition-transform duration-150 group-hover:translate-y-1 ${researchOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -131,16 +112,60 @@ export function Dossier({ result, dossier, origin }: DossierProps) {
         </div>
       )}
 
-      {/* f. Provenance strip */}
-      <div className="border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-muted">
-        CHECKED {result.provenance.showsConsidered} LISTED SHOWS · SCORED {result.provenance.plansScored} VIABLE
-        PLANS · {result.provenance.transitPlansChecked} TRANSIT CHECKS · DISTRICT {result.freshnessLabel} ·{" "}
-        {result.provenance.routeSource === "live"
-          ? "ROUTES LIVE VIA GOOGLE"
-          : isLocalhost
-            ? "ROUTES ESTIMATED · LOCAL DEV"
-            : "ROUTES ESTIMATED · LIVE LOOKUP UNAVAILABLE"}
+      {/* e. Provenance strip */}
+      <ResearchReceipt result={result} isLocalhost={isLocalhost} onStartOver={onStartOver} />
+    </div>
+  );
+}
+
+function ResearchReceipt({
+  result,
+  isLocalhost,
+  onStartOver,
+}: {
+  result: RecommendationResult;
+  isLocalhost: boolean;
+  onStartOver: () => void;
+}) {
+  const routeState =
+    result.provenance.routeSource === "live"
+      ? "Routes live via Google"
+      : isLocalhost
+        ? "Routes estimated · local dev"
+        : "Routes estimated · live lookup unavailable";
+
+  return (
+    <footer className="pt-3" data-testid="research-receipt">
+      <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-muted">Research receipt</p>
+      <dl className="grid grid-cols-2 border-y border-border sm:grid-cols-4">
+        <ReceiptCell index={0} label="Listed shows checked" value={String(result.provenance.showsConsidered)} />
+        <ReceiptCell index={1} label="Viable plans scored" value={String(result.provenance.plansScored)} />
+        <ReceiptCell index={2} label="Transit checks" value={String(result.provenance.transitPlansChecked)} />
+        <ReceiptCell index={3} label="District snapshot" value={result.freshnessLabel.replace("AS OF ", "")} />
+      </dl>
+      <div className="mt-5 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className={`font-mono text-[9px] uppercase leading-relaxed tracking-[0.08em] ${result.provenance.routeSource === "live" ? "text-sea-bright" : "text-ink-muted"}`}>
+          {routeState} · {result.provenance.venuesChecked} venues compared
+        </p>
+        <button
+          type="button"
+          onClick={onStartOver}
+          className="inline-flex min-h-10 items-center gap-2 self-start font-mono text-[9px] uppercase tracking-[0.14em] text-ink-muted transition-colors hover:text-gold-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+        >
+          <RotateCcw size={13} strokeWidth={1.5} />
+          Start a new search
+        </button>
       </div>
+    </footer>
+  );
+}
+
+function ReceiptCell({ index, label, value }: { index: number; label: string; value: string }) {
+  const borders = ["", "border-l", "border-t sm:border-l sm:border-t-0", "border-l border-t sm:border-t-0"];
+  return (
+    <div className={`flex min-h-[5.8rem] flex-col border-border px-4 py-4 sm:px-3 lg:px-4 ${borders[index]}`}>
+      <dt className="order-2 mt-3 max-w-[15ch] font-mono text-[8.5px] uppercase leading-[1.4] tracking-[0.08em] text-ink-muted">{label}</dt>
+      <dd className="order-1 font-mono text-[1rem] leading-none tabular-nums text-ink">{value}</dd>
     </div>
   );
 }
@@ -150,13 +175,8 @@ function ValueComparisonBlock({
 }: {
   valueComparison: NonNullable<RecommendationResult["valueComparison"]>;
 }) {
-  const { premium, budget, priceDiffRupees } = valueComparison;
+  const { premium, budget, priceDiffRupees, narrative } = valueComparison;
   const diff = priceDiffRupees.toLocaleString("en-IN");
-  const opinion =
-    premium.experienceScore - budget.experienceScore >= 30
-      ? `That ₹${diff} buys a genuinely different film — the frame itself is bigger.`
-      : `That ₹${diff} buys comfort, not picture. The screen is the same tier.`;
-
   return (
     <div className="flex flex-col gap-3 rounded-[10px] border border-border bg-bg-raised p-4">
       <p className="font-body text-[15px] italic text-ink">The value question.</p>
@@ -180,32 +200,32 @@ function ValueComparisonBlock({
 
       <div className="font-mono text-[11px] text-ink-muted">₹{diff} BETWEEN THEM</div>
 
-      <p className="font-body text-[14px] italic text-ink">{opinion}</p>
+      <p className="font-body text-[14px] italic text-ink">{narrative.lead}</p>
+      <p className="font-mono text-[9px] uppercase leading-relaxed tracking-[0.07em] text-ink-muted">{narrative.receipt}</p>
     </div>
   );
 }
 
-function AlternativeRow({ entry }: { entry: DossierEntry }) {
+function AlternativeLedgerRow({ entry, rank }: { entry: DossierEntry; rank: number }) {
+  const returnState = returnEvidenceLabel(entry.returnEvidence);
+
   return (
-    <div className={`rounded-md border px-3 py-3 ${entry.isRunnerUp ? "border-gold/40" : "border-border"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-display text-[15px] text-ink">{entry.venueName}</span>
-            {entry.isRunnerUp && (
-              <span className="font-mono text-[9px] uppercase tracking-widest text-gold-bright">RUNNER-UP</span>
-            )}
-          </div>
-          <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-ink-muted">
-            {entry.format} · {entry.showtime} · {entry.dateLabel} · {entry.durationMinutes} MIN AWAY ·{" "}
-            {returnEvidenceLabel(entry.returnEvidence)}
-          </div>
-        </div>
-        <span className="shrink-0 font-mono text-[12px] text-ink">
-          ₹{entry.totalCostRupees.toLocaleString("en-IN")}
-        </span>
+    <article className={`relative grid grid-cols-[2.2rem_minmax(0,1fr)] gap-x-3 gap-y-2 py-6 transition-colors hover:bg-ink/[0.02] sm:grid-cols-[2.75rem_minmax(0,1fr)_9.5rem] sm:gap-x-4 ${entry.isRunnerUp ? "before:absolute before:inset-y-5 before:left-0 before:w-0.5 before:bg-gold" : ""}`}>
+      <p className="pl-1 font-body text-[1.45rem] font-light leading-none text-ink/25">{String(rank).padStart(2, "0")}</p>
+      <div className="min-w-0">
+        <p className="font-body text-[1.18rem] font-semibold leading-[1.22] text-ink sm:text-[1.3rem]">{entry.venueName}</p>
+        {entry.isRunnerUp && <p className="mt-2 font-mono text-[8.5px] uppercase tracking-[0.1em] text-gold-bright">Runner-up</p>}
+        <p className={`${entry.isRunnerUp ? "mt-2" : "mt-3"} font-mono text-[9px] uppercase leading-relaxed tracking-[0.06em] text-ink-muted`}>
+          {entry.format} · {entry.showtime} · {entry.dateLabel}
+        </p>
+        <p className="mt-1 font-mono text-[9px] uppercase leading-relaxed tracking-[0.06em] text-ink-muted">
+          {entry.durationMinutes} min outbound · <span className={returnEvidenceTone(entry.returnEvidence)}>{returnState}</span>
+        </p>
       </div>
-    </div>
+      <p className="col-start-2 whitespace-nowrap font-mono text-[11px] tabular-nums tracking-[0.04em] text-ink sm:col-start-3 sm:row-start-1 sm:pt-1 sm:text-right">
+        ₹{entry.totalCostRupees.toLocaleString("en-IN")} <span className="text-[8px] uppercase text-ink-muted">total</span>
+      </p>
+    </article>
   );
 }
 
@@ -243,6 +263,12 @@ function returnEvidenceLabel(evidence: DossierEntry["returnEvidence"]): string {
   if (evidence === "live") return "TRANSIT FOUND";
   if (evidence === "no-route") return "CAB HOME";
   return "TRANSIT UNVERIFIED";
+}
+
+function returnEvidenceTone(evidence: DossierEntry["returnEvidence"]): string {
+  if (evidence === "live") return "text-sea-bright";
+  if (evidence === "no-route") return "text-wine-bright";
+  return "text-ink-muted";
 }
 
 export default Dossier;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeTargetDates,
+  buildEveningTimeline,
   departureTimeForShow,
   filterMakeableShows,
   isFourDxFormat,
@@ -58,6 +59,34 @@ describe("departureTimeForShow", () => {
     expect(departureTimeForShow(show({ date: "2026-07-22", time: "10:30 PM" }))).toBe(
       "2026-07-22T20:07:00.000Z"
     );
+  });
+});
+
+describe("buildEveningTimeline", () => {
+  it("uses the same arrival and theatre-exit buffers as the feasibility model", () => {
+    const timeline = buildEveningTimeline(show({ date: "2026-07-22", time: "7:00 PM" }), 35, {
+      evidence: "live",
+      durationMinutes: 40,
+      departureTime: "2026-07-22T16:45:00.000Z", // 10:15 PM IST
+    });
+
+    expect(timeline.leaveHome.isoTime).toBe("2026-07-22T12:40:00.000Z"); // 6:10 PM IST
+    expect(timeline.arriveAtTheatre.isoTime).toBe("2026-07-22T13:15:00.000Z"); // 6:45 PM IST
+    expect(timeline.filmEnds.isoTime).toBe("2026-07-22T16:22:00.000Z"); // 9:52 PM IST
+    expect(timeline.theatreExit.isoTime).toBe("2026-07-22T16:37:00.000Z"); // 10:07 PM IST
+    expect(timeline.returnDeparture?.isoTime).toBe("2026-07-22T16:45:00.000Z");
+    expect(timeline.homeArrival?.isoTime).toBe("2026-07-22T17:25:00.000Z");
+  });
+
+  it("does not manufacture a scheduled return or home-arrival from a cab fallback", () => {
+    const timeline = buildEveningTimeline(show({ time: "10:30 PM" }), 35, {
+      evidence: "unverified",
+      durationMinutes: 40,
+    });
+
+    expect(timeline.returnDeparture).toBeUndefined();
+    expect(timeline.homeArrival).toBeUndefined();
+    expect(timeline.theatreExit.dayOffset).toBe(1);
   });
 });
 

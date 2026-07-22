@@ -1,25 +1,21 @@
 /**
  * Hand-written fixture for ONE complete recommendation scenario, grounded in
  * real facts from data/venues-curated.json and BRIEF.md. There is no live
- * scraper/routing yet (see BRIEF.md "Next" steps), so this stands in for the
- * eventual data.json — but the score itself is NOT faked: it's produced by
- * calling the real `scoreVenue()` from src/scoring/score.ts against the
- * ticket/transport numbers below, so the numbers you see on the card are
- * internally consistent with the engine that actually exists.
+ * live pipeline, so this provides a stable visual/share-card scenario. The
+ * score itself is NOT faked: it is produced by calling the real `scoreVenue()`
+ * against the ticket and transport numbers below.
  *
  * Scenario: "Worth Every Rupee" for a South Delhi user (Hauz Khas-ish
  * locality on the Yellow Line). Winner is PVR Select City Walk (Saket) —
  * id `select-citywalk-saket` in venues-curated.json — over PVR Priya
- * (Vasant Vihar) — id `priya-vasant-vihar`. This is exactly the matchup
- * BRIEF.md's "Worth Every Rupee" description calls out: "often lands on
- * Saket IMAX classic seats: 90% of the experience at 40% of the price."
+ * (Vasant Vihar) — id `priya-vasant-vihar`. The fixture demonstrates a
+ * strong-screen value trade-off without claiming an unsupported percentage
+ * of another venue's experience.
  *
  * Judgment call on the format chip: venues-curated.json marks Select City
- * Walk's laser status as "Reputed to match Priya's laser IMAX" at
- * confidence HIGH, not CONFIRMED (Priya alone is CONFIRMED laser). Per
- * BRIEF.md's "never oversell" rule, the chip stays the defensible `IMAX 2D`
- * and the laser comparison is pushed into the hedged, editorial verdict
- * line instead of asserted as fact in mono.
+ * Walk's laser status is not confirmed. Per the "never oversell" rule, the
+ * chip stays the defensible `IMAX 2D`, and the structured narrative carries
+ * the unverified-laser caveat instead of asserting parity with Priya.
  */
 
 import {
@@ -113,6 +109,39 @@ export const sampleResult: RecommendationResult = {
     },
     totalCostRupees: winnerScore.totalCostRupees,
   },
+  evening: {
+    timezone: "Asia/Kolkata",
+    theatreExitBufferMinutes: 15,
+    leaveHome: { label: "LEAVE HOME", time: "4:00 pm", isoTime: "2026-07-20T10:30:00.000Z", dayOffset: 0 },
+    arriveAtTheatre: { label: "AT THEATRE", time: "4:35 pm", isoTime: "2026-07-20T11:05:00.000Z", dayOffset: 0 },
+    filmStarts: { label: "FILM STARTS", time: "4:50 pm", isoTime: "2026-07-20T11:20:00.000Z", dayOffset: 0 },
+    filmEnds: { label: "FILM ENDS", time: "7:42 pm", isoTime: "2026-07-20T14:12:00.000Z", dayOffset: 0 },
+    theatreExit: { label: "THEATRE EXIT", time: "7:57 pm", isoTime: "2026-07-20T14:27:00.000Z", dayOffset: 0 },
+    returnDeparture: { label: "RETURN DEPARTS", time: "11:32 pm", isoTime: "2026-07-20T18:02:00.000Z", dayOffset: 0 },
+    homeArrival: { label: "HOME", time: "12:07 am", isoTime: "2026-07-20T18:37:00.000Z", dayOffset: 1 },
+  },
+  evidence: {
+    showtimes: { source: "district", refreshedAtLabel: "AS OF 18:42", targetDates: ["2026-07-20"] },
+    outbound: { mode: "drive", source: "live", durationMinutes: 35, checkedAtLabel: "6:42 pm" },
+    return: {
+      mode: "transit",
+      status: "live",
+      selectedPlanChecked: true,
+      departureBasis: "film-end + 15 min theatre exit",
+      scheduledForLabel: "11:32 pm",
+    },
+  },
+  narrative: {
+    selectedFormat: {
+      judgment: "High-rated IMAX in our NCR shortlist.",
+      receipt: "Listed as IMAX 2D · screen score 93/100.",
+      caveat: "Laser status is unverified.",
+    },
+    outcome: {
+      lead: "Lower complete-night cost than PVR Priya.",
+      receipt: "Screen 93/100 vs 96/100 · ₹1,180 vs ₹2,800 door to door · 35 vs 40 min outbound · return: scheduled transit found vs scheduled transit found.",
+    },
+  },
   whyLine:
     "Beats Priya on price by ₹1,620 for the same laser reputation, and swaps a forty-minute auto hunt for a walk to Malviya Nagar.",
   runnerUp: {
@@ -124,6 +153,53 @@ export const sampleResult: RecommendationResult = {
     score: runnerUpScore,
   },
   score: winnerScore,
+  counterfactuals: [
+    {
+      id: "picture-first",
+      label: "IF PICTURE CAME FIRST",
+      question: "What if the screen mattered more than every other trade-off?",
+      venueName: "PVR Priya",
+      locality: "Vasant Vihar",
+      formatChip: "IMAX WITH LASER",
+      showtime: "4:30 PM",
+      dateLabel: "MON JUL 20",
+      priceLabel: "₹2,500",
+      totalCostRupees: runnerUpScore.totalCostRupees,
+      returnEvidence: "live",
+      metric: { label: "PICTURE SCORE", value: "96/100" },
+      isCurrentRecommendation: false,
+    },
+    {
+      id: "price-first",
+      label: "IF PRICE CAME FIRST",
+      question: "What if the lowest complete-night cost was the only priority?",
+      venueName: winnerVenue.name,
+      locality: "Saket",
+      formatChip: "IMAX 2D",
+      showtime: "4:50 PM",
+      dateLabel: "MON JUL 20",
+      priceLabel: "₹1,100",
+      totalCostRupees: winnerScore.totalCostRupees,
+      returnEvidence: "live",
+      metric: { label: "DOOR TO DOOR", value: `₹${winnerScore.costPerPersonRupees.toLocaleString("en-IN")}` },
+      isCurrentRecommendation: true,
+    },
+    {
+      id: "earliest-home",
+      label: "IF HOME EARLIEST MATTERED",
+      question: "What if getting home earliest was the deciding factor?",
+      venueName: winnerVenue.name,
+      locality: "Saket",
+      formatChip: "IMAX 2D",
+      showtime: "4:50 PM",
+      dateLabel: "MON JUL 20",
+      priceLabel: "₹1,100",
+      totalCostRupees: winnerScore.totalCostRupees,
+      returnEvidence: "live",
+      metric: { label: "HOME BY", value: "12:07 am" },
+      isCurrentRecommendation: true,
+    },
+  ],
   districtUrl:
     "https://www.district.in/movies/pvr-select-city-walk-saket-new-delhi-in-delhi-ncr-CD1022254",
   directionsUrl:

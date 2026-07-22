@@ -1,5 +1,9 @@
 # Brief: "How this was made" page
 
+**Living source material:** [`BUILD-RECORD.md`](./BUILD-RECORD.md) holds the
+dated decisions, evidence, trade-offs, and story angles. Update that file as
+the app evolves; use this brief to decide how the public page presents it.
+
 *Written 2026-07-22. This is the brief only — the page gets built in a later pass (Sonnet-buildable from this spec). Authority order for any conflict: DESIGN.md > this brief.*
 
 ## Why this page exists (two audiences, one page)

@@ -13,7 +13,7 @@ interface IntentScreenProps {
 const INTENT_COPY: Record<IntentId, string> = {
   "full-epic": "Experience dominates. Cost and distance are tiebreakers.",
   "worth-every-rupee":
-    "Experience per rupee — ticket and travel, both ways. Often lands on the classic seats that get you 90% of the experience at 40% of the price.",
+    "Experience per rupee — ticket and travel, both ways. Rewards strong screens when the complete-night cost stays proportionate.",
   "easy-evening":
     "Door-to-door time and a certain way home dominate. We'll never send you to a bad screen — but a great one buys nothing extra here.",
 };

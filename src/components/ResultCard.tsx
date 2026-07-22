@@ -182,7 +182,11 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
 
       {/* 3. Verdict */}
-      <p className="font-body text-[16px] italic leading-relaxed text-ink">{result.verdict}</p>
+      <p className="font-body text-[16px] italic leading-relaxed text-ink">{result.narrative.selectedFormat.judgment}</p>
+      <p className="font-mono text-[9px] uppercase leading-relaxed tracking-[0.07em] text-ink-muted">{result.narrative.selectedFormat.receipt}</p>
+      {result.narrative.selectedFormat.caveat && (
+        <p className="font-mono text-[9px] uppercase leading-relaxed tracking-[0.07em] text-gold-bright">{result.narrative.selectedFormat.caveat}</p>
+      )}
 
       {/* 4. The show — hero */}
       <div className="border-t border-border pt-4">
@@ -268,7 +272,10 @@ export function ResultCard({ result }: ResultCardProps) {
       </div>
 
       {/* 6. Why line */}
-      <p className="font-body text-[14px] leading-relaxed text-ink-muted">{result.whyLine}</p>
+      <div>
+        <p className="font-body text-[14px] leading-relaxed text-ink-muted">{result.narrative.outcome.lead}</p>
+        <p className="mt-2 font-mono text-[9px] uppercase leading-relaxed tracking-[0.06em] text-ink-muted">{result.narrative.outcome.receipt}</p>
+      </div>
 
       {/* 7. Runner-up — collapsed row, expandable. Absent when only one venue
           matched this request (e.g. a narrow time band) — no row rendered

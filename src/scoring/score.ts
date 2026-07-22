@@ -104,9 +104,9 @@ export const FULL_EPIC: IntentWeights = {
 
 /**
  * "Worth Every Rupee" — experience-per-rupee. Cost is weighted heavily
- * alongside experience; travel cost and time are secondary. Tuned to land
- * on "90% of the experience at 40% of the price" picks (e.g. Saket classic
- * seats over Priya), not on the single cheapest venue regardless of screen.
+ * alongside experience; travel cost and time are secondary. Tuned to reward
+ * a strong screen when its complete-night cost is proportionate, not the
+ * single cheapest venue regardless of screen.
  */
 export const WORTH_EVERY_RUPEE: IntentWeights = {
   id: "worth-every-rupee",

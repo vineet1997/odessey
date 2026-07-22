@@ -39,8 +39,16 @@
 import venuesData from "../../data/venues-curated.json";
 import showtimesData from "../../data/showtimes-live.json";
 import { scoreVenue, INTENTS, type IntentId, type ScoreResult, type UserContext } from "../scoring/score";
+import { buildRecommendationNarrative, buildValueComparison, type NarrativePlan } from "./recommendationNarrative";
 import type { Origin, WhenChoice } from "../components/helm/types";
-import type { RecommendationResult } from "../types/recommendation";
+import type {
+  CounterfactualAlternative,
+  EveningMoment,
+  EveningTimeline,
+  RecommendationEvidence,
+  RecommendationResult,
+  ReturnEvidenceStatus,
+} from "../types/recommendation";
 
 const FILM_RUNTIME_MINUTES = 172; // BRIEF.md — The Odyssey's runtime
 const THEATRE_EXIT_BUFFER_MINUTES = 15;
@@ -55,8 +63,8 @@ const CAB_PER_KM_RUPEES = 18;
 const MAKEABLE_BASELINE_BUFFER_MINUTES = 40;
 const MAKEABLE_ROUTE_BUFFER_MINUTES = 15;
 
-// valueComparison only fires when the venue's other format is a genuinely
-// different experience, not a rounding difference.
+// Retained solely as a candidate gate; the narrative module owns all language
+// about a format comparison.
 const VALUE_COMPARISON_MIN_GAP = 15;
 
 interface CuratedVenue {
@@ -124,14 +132,12 @@ interface ResolvedRoute {
   distanceKm: number;
 }
 
-type ReturnEvidence = "live" | "no-route" | "unverified";
+type ReturnEvidence = ReturnEvidenceStatus;
 
-interface ReturnJourney {
+interface ReturnJourney extends TimelineReturnJourney {
   evidence: ReturnEvidence;
-  durationMinutes: number;
   costRupees: number;
   costIsEstimate: boolean;
-  departureTime?: string;
   departureStop?: string;
   lineName?: string;
   lineColorHex?: string;
@@ -414,6 +420,78 @@ function compareShowsChronologically(a: Show, b: Show): number {
   return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
 }
 
+/** Minimal public shape needed to derive the timeline. Keeping it separate
+ * from the routing response makes the itinerary testable without fetch. */
+export interface TimelineReturnJourney {
+  evidence: ReturnEvidenceStatus;
+  durationMinutes: number;
+  departureTime?: string;
+}
+
+function showStartTimeForShow(show: Pick<Show, "date" | "time">): Date {
+  const midnightIst = new Date(`${show.date}T00:00:00+05:30`);
+  return new Date(midnightIst.getTime() + parseTimeToMinutes(show.time) * 60_000);
+}
+
+function dayOffsetFromShow(moment: Date, showStart: Date): number {
+  // Shift both instants into IST before taking the calendar-day bucket. This
+  // is intentionally not duration/24h: a midnight crossing is what matters
+  // to a person scanning the itinerary.
+  const istOffsetMs = 330 * 60 * 1000;
+  return (
+    Math.floor((moment.getTime() + istOffsetMs) / (24 * 60 * 60 * 1000)) -
+    Math.floor((showStart.getTime() + istOffsetMs) / (24 * 60 * 60 * 1000))
+  );
+}
+
+function eveningMoment(label: string, moment: Date, showStart: Date): EveningMoment {
+  return {
+    label,
+    time: formatTransitTime(moment.toISOString()),
+    isoTime: moment.toISOString(),
+    dayOffset: dayOffsetFromShow(moment, showStart),
+  };
+}
+
+/**
+ * Builds the whole night around a specific screening. The pre-film arrival
+ * allowance matches the exact 15-minute buffer used by tonight's makeability
+ * gate; it is not decorative padding. Scheduled public transport is the only
+ * condition under which an exact return departure/home-arrival is shown.
+ */
+export function buildEveningTimeline(
+  show: Pick<Show, "date" | "time">,
+  outboundDurationMinutes: number,
+  returnJourney: TimelineReturnJourney
+): EveningTimeline {
+  const showStart = showStartTimeForShow(show);
+  const arriveAtTheatre = new Date(showStart.getTime() - MAKEABLE_ROUTE_BUFFER_MINUTES * 60_000);
+  const leaveHome = new Date(arriveAtTheatre.getTime() - outboundDurationMinutes * 60_000);
+  const filmEnds = new Date(showStart.getTime() + FILM_RUNTIME_MINUTES * 60_000);
+  const theatreExit = new Date(filmEnds.getTime() + THEATRE_EXIT_BUFFER_MINUTES * 60_000);
+  const scheduledDeparture =
+    returnJourney.evidence === "live" && returnJourney.departureTime
+      ? new Date(returnJourney.departureTime)
+      : undefined;
+  const homeArrival = scheduledDeparture
+    ? new Date(scheduledDeparture.getTime() + returnJourney.durationMinutes * 60_000)
+    : undefined;
+
+  return {
+    timezone: "Asia/Kolkata",
+    theatreExitBufferMinutes: THEATRE_EXIT_BUFFER_MINUTES,
+    leaveHome: eveningMoment("LEAVE HOME", leaveHome, showStart),
+    arriveAtTheatre: eveningMoment("AT THEATRE", arriveAtTheatre, showStart),
+    filmStarts: eveningMoment("FILM STARTS", showStart, showStart),
+    filmEnds: eveningMoment("FILM ENDS", filmEnds, showStart),
+    theatreExit: eveningMoment("THEATRE EXIT", theatreExit, showStart),
+    ...(scheduledDeparture
+      ? { returnDeparture: eveningMoment("RETURN DEPARTS", scheduledDeparture, showStart) }
+      : {}),
+    ...(homeArrival ? { homeArrival: eveningMoment("HOME", homeArrival, showStart) } : {}),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Candidate assembly
 // ---------------------------------------------------------------------------
@@ -444,6 +522,20 @@ interface Scored {
   returnJourney: ReturnJourney;
   showEndMinutes: number;
   score: ScoreResult;
+}
+
+function narrativePlanOf(scored: Scored): NarrativePlan & { showtime: string } {
+  return {
+    venueId: scored.candidate.venue.id,
+    venueName: scored.candidate.venue.name,
+    format: scored.candidate.format,
+    experienceScore: scored.candidate.experienceScore,
+    totalCostRupees: scored.score.totalCostRupees,
+    outboundDurationMinutes: scored.candidate.route.durationMinutes,
+    returnEvidence: scored.returnJourney.evidence,
+    score: scored.score,
+    showtime: scored.candidate.show.time,
+  };
 }
 
 function scoreCandidateWithReturn(
@@ -511,30 +603,103 @@ function buildJourneyLegs(scored: Scored) {
   return { outbound, returnLeg };
 }
 
-function buildWhyLine(winner: Scored, runnerUp: Scored | undefined): string {
-  if (!runnerUp) {
-    return "The only venue with a matching showtime for this window right now.";
-  }
-  const costDiff = runnerUp.score.costPerPersonRupees - winner.score.costPerPersonRupees;
-  const timeDiff = runnerUp.candidate.route.durationMinutes - winner.candidate.route.durationMinutes;
-
-  if (Math.abs(costDiff) >= Math.abs(timeDiff) && Math.abs(costDiff) >= 50) {
-    return costDiff > 0
-      ? `Beats ${runnerUp.candidate.venue.name} by ₹${Math.round(costDiff)} for a comparable experience.`
-      : `Costs ₹${Math.round(-costDiff)} more than ${runnerUp.candidate.venue.name}, but scored higher overall for this intent.`;
-  }
-  if (Math.abs(timeDiff) >= 5) {
-    return timeDiff > 0
-      ? `About ${Math.round(timeDiff)} min closer than ${runnerUp.candidate.venue.name}.`
-      : `A bit further than ${runnerUp.candidate.venue.name}, but scored higher overall for this intent.`;
-  }
-  return `Edged out ${runnerUp.candidate.venue.name} on balance for this intent.`;
-}
-
 function seatsLineOf(show: Show): string | undefined {
   if (show.seatsAvailable == null || show.seatsTotal == null) return undefined;
   const base = `${show.seatsAvailable} OF ${show.seatsTotal} SEATS LEFT`;
   return show.availability ? `${base} · ${show.availability.toUpperCase()}` : base;
+}
+
+function projectedHomeArrival(scored: Scored): Date {
+  // A live transit plan is a schedule-backed arrival. For fallback cases this
+  // is deliberately only a projection: theatre exit plus the cab route
+  // duration used by the score, never a promise of an actual cab ETA.
+  const returnDeparture =
+    scored.returnJourney.evidence === "live" && scored.returnJourney.departureTime
+      ? new Date(scored.returnJourney.departureTime)
+      : new Date(departureTimeForShow(scored.candidate.show));
+  return new Date(returnDeparture.getTime() + scored.returnJourney.durationMinutes * 60_000);
+}
+
+function stablePlanTieBreak(a: Scored, b: Scored): number {
+  const chronological = compareShowsChronologically(a.candidate.show, b.candidate.show);
+  if (chronological !== 0) return chronological;
+  return a.candidate.venue.name.localeCompare(b.candidate.venue.name);
+}
+
+function chooseCounterfactual(scored: Scored[], id: CounterfactualAlternative["id"]): Scored {
+  return [...scored].sort((a, b) => {
+    if (id === "picture-first") {
+      const experienceDifference = b.candidate.experienceScore - a.candidate.experienceScore;
+      if (experienceDifference !== 0) return experienceDifference;
+      const scoreDifference = b.score.totalScore - a.score.totalScore;
+      return scoreDifference !== 0 ? scoreDifference : stablePlanTieBreak(a, b);
+    }
+    if (id === "price-first") {
+      const costDifference = a.score.costPerPersonRupees - b.score.costPerPersonRupees;
+      if (costDifference !== 0) return costDifference;
+      const experienceDifference = b.candidate.experienceScore - a.candidate.experienceScore;
+      return experienceDifference !== 0 ? experienceDifference : stablePlanTieBreak(a, b);
+    }
+
+    const arrivalDifference = projectedHomeArrival(a).getTime() - projectedHomeArrival(b).getTime();
+    if (arrivalDifference !== 0) return arrivalDifference;
+    // Prefer evidence when two projected arrivals are the same minute.
+    const evidenceRank: Record<ReturnEvidence, number> = { live: 0, unverified: 1, "no-route": 2 };
+    const evidenceDifference = evidenceRank[a.returnJourney.evidence] - evidenceRank[b.returnJourney.evidence];
+    return evidenceDifference !== 0 ? evidenceDifference : stablePlanTieBreak(a, b);
+  })[0];
+}
+
+function counterfactualOf(
+  selected: Scored,
+  winner: Scored,
+  id: CounterfactualAlternative["id"]
+): CounterfactualAlternative {
+  const projectedArrival = projectedHomeArrival(selected);
+  const copy =
+    id === "picture-first"
+      ? {
+          label: "IF PICTURE CAME FIRST",
+          question: "What if the screen mattered more than every other trade-off?",
+          metric: { label: "PICTURE SCORE", value: `${selected.candidate.experienceScore}/100` },
+        }
+      : id === "price-first"
+        ? {
+            label: "IF PRICE CAME FIRST",
+            question: "What if the lowest complete-night cost was the only priority?",
+            metric: {
+              label: "DOOR TO DOOR",
+              value: `₹${selected.score.costPerPersonRupees.toLocaleString("en-IN")}`,
+            },
+          }
+        : {
+            label: "IF HOME EARLIEST MATTERED",
+            question: "What if getting home earliest was the deciding factor?",
+            metric: {
+              label: selected.returnJourney.evidence === "live" ? "HOME BY" : "EST. HOME BY",
+              value: formatTransitTime(projectedArrival.toISOString()),
+            },
+          };
+
+  return {
+    id,
+    ...copy,
+    venueName: selected.candidate.venue.name,
+    locality: selected.candidate.venue.locality,
+    formatChip: selected.candidate.format,
+    showtime: selected.candidate.show.time,
+    dateLabel: formatDateLabel(selected.candidate.show.date),
+    priceLabel: `₹${selected.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
+    totalCostRupees: selected.score.totalCostRupees,
+    returnEvidence: selected.returnJourney.evidence,
+    isCurrentRecommendation: selected === winner,
+  };
+}
+
+function buildCounterfactuals(eligible: Scored[], winner: Scored): CounterfactualAlternative[] {
+  return (["picture-first", "price-first", "earliest-home"] as const).map((id) =>
+    counterfactualOf(chooseCounterfactual(eligible, id), winner, id)
+  );
 }
 
 function whenLabelOf(when: WhenChoice): string {
@@ -749,29 +914,7 @@ export async function buildRecommendation(
       );
       const gap = Math.abs(winner.candidate.experienceScore - bestOther.candidate.experienceScore);
       if (gap >= VALUE_COMPARISON_MIN_GAP) {
-        const winnerEntry = {
-          format: winner.candidate.format,
-          priceLabel: `₹${winner.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
-          experienceScore: winner.candidate.experienceScore,
-          showtime: winner.candidate.show.time,
-        };
-        const otherEntry = {
-          format: bestOther.candidate.format,
-          priceLabel: `₹${bestOther.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
-          experienceScore: bestOther.candidate.experienceScore,
-          showtime: bestOther.candidate.show.time,
-        };
-        const [premium, budget] =
-          winnerEntry.experienceScore >= otherEntry.experienceScore
-            ? [winnerEntry, otherEntry]
-            : [otherEntry, winnerEntry];
-        valueComparison = {
-          premium,
-          budget,
-          priceDiffRupees: Math.abs(
-            winner.candidate.show.priceRange!.min - bestOther.candidate.show.priceRange!.min
-          ),
-        };
+        valueComparison = buildValueComparison(narrativePlanOf(winner), narrativePlanOf(bestOther));
       }
     }
   }
@@ -782,13 +925,48 @@ export async function buildRecommendation(
   // least one scored candidate), not just the ones that survived to `eligible`.
   const venuesChecked = new Set(scored.map((s) => s.candidate.venue.id)).size;
   const routeSource = scored.every((s) => s.candidate.route.source === "live") ? "live" : "estimated";
+  const freshnessLabel = formatFreshnessLabel(meta.generatedAt);
+  const selectedPlanChecked = transitByJourney.has(journeyKeyOf(winner.candidate));
+  const evening = buildEveningTimeline(
+    winner.candidate.show,
+    winner.candidate.route.durationMinutes,
+    winner.returnJourney
+  );
+  const evidence: RecommendationEvidence = {
+    showtimes: {
+      source: "district",
+      refreshedAtLabel: freshnessLabel,
+      targetDates,
+    },
+    outbound: {
+      mode: "drive",
+      source: winner.candidate.route.source,
+      durationMinutes: winner.candidate.route.durationMinutes,
+      checkedAtLabel: formatTransitTime(new Date().toISOString()),
+    },
+    return: {
+      mode: winner.returnJourney.evidence === "live" ? "transit" : "cab-fallback",
+      status: winner.returnJourney.evidence,
+      selectedPlanChecked,
+      departureBasis: "film-end + 15 min theatre exit",
+      ...(winner.returnJourney.evidence === "live" && winner.returnJourney.departureTime
+        ? { scheduledForLabel: formatTransitTime(winner.returnJourney.departureTime) }
+        : {}),
+    },
+  };
+  const narrative = buildRecommendationNarrative(
+    narrativePlanOf(winner),
+    runnerUp ? narrativePlanOf(runnerUp) : undefined,
+    intentWeights,
+    new Set(eligible.map((candidate) => candidate.candidate.venue.id)).size
+  );
 
   const result: RecommendationResult = {
     intentLabel: intentWeights.label.toUpperCase(),
-    freshnessLabel: formatFreshnessLabel(meta.generatedAt),
+    freshnessLabel,
     venueName: winner.candidate.venue.name,
     formatChip: winner.candidate.format,
-    verdict: winner.candidate.venue.editorial_verdict,
+    verdict: narrative.selectedFormat.judgment,
     showtime: winner.candidate.show.time,
     dateLabel: formatDateLabel(winner.candidate.show.date),
     seatClass: winner.candidate.show.cheapestSeatClassLabel ?? "SEATS",
@@ -798,7 +976,10 @@ export async function buildRecommendation(
       return: returnLeg,
       totalCostRupees: winner.score.totalCostRupees,
     },
-    whyLine: buildWhyLine(winner, runnerUp),
+    evening,
+    evidence,
+    narrative,
+    whyLine: `${narrative.outcome.lead} ${narrative.outcome.receipt}`,
     runnerUp: runnerUp
       ? {
           venueName: runnerUp.candidate.venue.name,
@@ -810,6 +991,7 @@ export async function buildRecommendation(
         }
       : undefined,
     score: winner.score,
+    counterfactuals: buildCounterfactuals(eligible, winner),
     // Fallback covers the type's null possibility (shouldn't happen for the 15
     // curated venues in practice) — a generic search beats a dead button.
     districtUrl: winner.candidate.districtUrl ?? "https://www.district.in/movies/the-odyssey-movie-tickets-in-delhi-ncr-MV187151",
