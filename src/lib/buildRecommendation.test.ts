@@ -4,8 +4,8 @@ import {
   filterMakeableShows,
   isFourDxFormat,
   isoDateOf,
-  pickShow,
   resolveExperienceScore,
+  viableShowsForRoute,
   type Show,
 } from "./buildRecommendation";
 
@@ -22,77 +22,27 @@ function show(overrides: Partial<Show> & { time: string }): Show {
   };
 }
 
-describe("pickShow", () => {
-  describe("full-epic — closest to 19:30 IST, ties go later", () => {
-    it("picks the show nearest 7:30 PM", () => {
-      const shows = [show({ time: "5:00 PM" }), show({ time: "7:45 PM" }), show({ time: "10:00 PM" })];
-      expect(pickShow(shows, "full-epic")?.time).toBe("7:45 PM");
-    });
-
-    it("breaks an equidistant tie by taking the later show", () => {
-      // 7:00 PM and 8:00 PM are both 30 min from 7:30 PM
-      const shows = [show({ time: "7:00 PM" }), show({ time: "8:00 PM" })];
-      expect(pickShow(shows, "full-epic")?.time).toBe("8:00 PM");
-    });
+describe("viableShowsForRoute — score every viable show", () => {
+  it("keeps every show that clears the exact tonight route cutoff", () => {
+    // 7:00 PM now + 35 min route + 15 min arrival buffer = 7:50 PM.
+    const shows = [show({ time: "7:49 PM" }), show({ time: "7:50 PM" }), show({ time: "9:30 PM" })];
+    expect(viableShowsForRoute(shows, "tonight", 19 * 60, 35).map((candidate) => candidate.time)).toEqual([
+      "7:50 PM",
+      "9:30 PM",
+    ]);
   });
 
-  describe("easy-evening — closest to 18:30 IST, ties go earlier", () => {
-    it("picks the show nearest 6:30 PM", () => {
-      const shows = [show({ time: "4:00 PM" }), show({ time: "6:15 PM" }), show({ time: "9:00 PM" })];
-      expect(pickShow(shows, "easy-evening")?.time).toBe("6:15 PM");
-    });
-
-    it("breaks an equidistant tie by taking the earlier show", () => {
-      // 6:00 PM and 7:00 PM are both 30 min from 6:30 PM
-      const shows = [show({ time: "6:00 PM" }), show({ time: "7:00 PM" })];
-      expect(pickShow(shows, "easy-evening")?.time).toBe("6:00 PM");
-    });
+  it("does not preselect one intent-preferred show from several viable ones", () => {
+    const shows = [show({ time: "5:00 PM" }), show({ time: "7:45 PM" }), show({ time: "10:00 PM" })];
+    expect(viableShowsForRoute(shows, "tomorrow", 0, 120)).toEqual(shows);
   });
 
-  describe("worth-every-rupee — cheapest priceRange.min, ties go closest to 19:00", () => {
-    it("picks the cheapest show", () => {
-      const shows = [
-        show({ time: "5:00 PM", priceRange: { min: 1200, max: 1200 } }),
-        show({ time: "8:00 PM", priceRange: { min: 800, max: 800 } }),
-        show({ time: "10:00 PM", priceRange: { min: 1500, max: 1500 } }),
-      ];
-      expect(pickShow(shows, "worth-every-rupee")?.time).toBe("8:00 PM");
-    });
-
-    it("breaks a price tie by taking the show closest to 7:00 PM", () => {
-      const shows = [
-        show({ time: "6:40 PM", priceRange: { min: 900, max: 900 } }), // 20 min from 19:00
-        show({ time: "7:10 PM", priceRange: { min: 900, max: 900 } }), // 10 min from 19:00
-      ];
-      expect(pickShow(shows, "worth-every-rupee")?.time).toBe("7:10 PM");
-    });
-
-    it("ignores shows without a priceRange", () => {
-      const shows = [show({ time: "7:00 PM", priceRange: null }), show({ time: "8:00 PM", priceRange: { min: 900, max: 900 } })];
-      expect(pickShow(shows, "worth-every-rupee")?.time).toBe("8:00 PM");
-    });
-
-    it("returns null when nothing has a priceRange", () => {
-      const shows = [show({ time: "7:00 PM", priceRange: null })];
-      expect(pickShow(shows, "worth-every-rupee")).toBeNull();
-    });
-  });
-
-  it("returns null for an empty list", () => {
-    expect(pickShow([], "full-epic")).toBeNull();
-  });
-
-  it("weekend case: picks across two different dates purely on time-of-day distance", () => {
-    // Saturday 7:00 PM is 30 min from the full-epic target (19:30); Sunday
-    // 7:45 PM is only 15 min away — Sunday should win even though it comes
-    // later chronologically and the shows span two separate dates.
+  it("keeps viable shows across both weekend dates", () => {
     const shows = [
       show({ date: "2026-07-25", time: "7:00 PM" }),
       show({ date: "2026-07-26", time: "7:45 PM" }),
     ];
-    const picked = pickShow(shows, "full-epic");
-    expect(picked?.date).toBe("2026-07-26");
-    expect(picked?.time).toBe("7:45 PM");
+    expect(viableShowsForRoute(shows, "weekend", 0, 120)).toEqual(shows);
   });
 });
 

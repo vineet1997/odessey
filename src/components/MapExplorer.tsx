@@ -17,7 +17,7 @@ interface MapExplorerProps {
  * ranked — plotted with the same numbers the scoring engine used. The point
  * isn't "here's a map"; it's "here's the data, verify it yourself."
  *
- * `venues` is the full dossier (every scored venue x format candidate) —
+ * `venues` is the full dossier (every scored venue x format x show plan) —
  * one marker per VENUE is drawn, using that venue's best-scoring candidate,
  * since the map plots places, not format variants.
  *

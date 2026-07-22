@@ -20,8 +20,8 @@ async function main() {
   const dlfPhase2 = LOCALITIES.find((l) => l.name === "DLF Phase 2, Gurugram")!;
 
   for (const intentId of ["full-epic", "worth-every-rupee", "easy-evening"] as const) {
-    console.log(`\n=== EVENING / ${intentId} ===`);
-    const outcome = await buildRecommendation(dlfPhase2, "evening", intentId);
+    console.log(`\n=== TONIGHT / ${intentId} ===`);
+    const outcome = await buildRecommendation(dlfPhase2, "tonight", intentId);
     if (!outcome.ok) {
       console.log("NO RESULT:", outcome.reason);
       continue;
@@ -33,6 +33,7 @@ async function main() {
     console.log(`  return: [${r.journey.return.status}] ${r.journey.return.headline}`);
     console.log(`  why: ${r.whyLine}`);
     console.log(`  runner-up: ${r.runnerUp ? r.runnerUp.venueName : "(none)"}`);
+    console.log(`  scored: ${r.provenance.plansScored} viable plans across ${r.provenance.venuesChecked} venues`);
     console.log(`  districtUrl: ${r.districtUrl}`);
   }
 }

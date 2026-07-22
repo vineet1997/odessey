@@ -131,5 +131,7 @@ export const sampleResult: RecommendationResult = {
   provenance: {
     venuesChecked: 12,
     showsConsidered: 47,
+    plansScored: 31,
+    routeSource: "live",
   },
 };

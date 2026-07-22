@@ -5,12 +5,13 @@
  * per-user call": venue/showtime data is baked into the build (static
  * JSON imports below), but travel time is fetched live per request.
  *
- * CANDIDATES ARE VENUE x FORMAT, not just venue. A venue with an IMAX
- * flagship screen and also a ₹310 recliner-format show is two separate
- * candidates with two separate experience scores — this fixes a real bug
- * where the recliner show used to inherit the venue's 93-point IMAX score.
- * See resolveExperienceScore() and data/venues-curated.json's
- * format_scores / format_score_default.
+ * CANDIDATES ARE VENUE x FORMAT x SHOW, not just venue. Every reachable
+ * show is scored as a complete plan; the engine never picks one show per
+ * format before comparing the trade-offs. A venue with an IMAX flagship
+ * screen and a ₹310 recliner show therefore produces distinct candidates
+ * with distinct experience, price, timing, and feasibility inputs. Route
+ * calls are still deduplicated per venue, so the richer ranking does not
+ * increase Google Routes usage.
  *
  * HONEST SIMPLIFICATIONS IN THIS PASS (all deliberate, all documented —
  * see BRIEF.md for what's still queued):
@@ -112,10 +113,19 @@ interface RouteApiResponse {
   distanceKm?: number;
 }
 
-/** One scored candidate (venue x format), shaped for the dossier/map
+interface ResolvedRoute {
+  source: "live" | "estimated";
+  durationMinutes: number;
+  distanceKm: number;
+}
+
+/** One scored candidate (venue x format x show), shaped for the dossier/map
  * explorer — every field here is a real number the scoring engine actually
  * used, not a display-only summary invented separately. */
 export interface DossierEntry {
+  /** Stable within one recommendation; also prevents React key collisions
+   * now that one venue+format can contribute several showtime plans. */
+  planId: string;
   venueId: string;
   venueName: string;
   format: string;
@@ -197,7 +207,7 @@ function estimateCabFare(distanceKm: number): number {
 async function fetchRoute(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number }
-): Promise<{ durationMinutes: number; distanceKm: number } | null> {
+): Promise<ResolvedRoute | null> {
   try {
     const res = await fetch("/api/route", {
       method: "POST",
@@ -206,8 +216,14 @@ async function fetchRoute(
     });
     if (!res.ok) return null;
     const data = (await res.json()) as RouteApiResponse;
-    if (typeof data.durationMinutes !== "number" || typeof data.distanceKm !== "number") return null;
-    return { durationMinutes: data.durationMinutes, distanceKm: data.distanceKm };
+    if (
+      (data.source !== "live" && data.source !== "estimated") ||
+      typeof data.durationMinutes !== "number" ||
+      typeof data.distanceKm !== "number"
+    ) {
+      return null;
+    }
+    return { source: data.source, durationMinutes: data.durationMinutes, distanceKm: data.distanceKm };
   } catch {
     return null; // network error — this venue just gets excluded, not guessed
   }
@@ -279,42 +295,20 @@ export function isFourDxFormat(format: string): boolean {
   return format.includes("4DX");
 }
 
-/**
- * Picks the single best show for one candidate under one intent. Operates
- * purely on time-of-day (parseTimeToMinutes) — this is what makes the
- * "weekend" case (shows spread across two dates) work for free: distance to
- * a target minute-of-day doesn't care which day the show is on.
- */
-export function pickShow(shows: Show[], intentId: IntentId): Show | null {
-  if (shows.length === 0) return null;
-
-  if (intentId === "worth-every-rupee") {
-    const priced = shows.filter((s) => s.priceRange !== null);
-    if (priced.length === 0) return null;
-    return priced.reduce((best, s) => {
-      const sMin = s.priceRange!.min;
-      const bestMin = best.priceRange!.min;
-      if (sMin < bestMin) return s;
-      if (sMin > bestMin) return best;
-      // tie -> closest to 19:00
-      const dS = Math.abs(parseTimeToMinutes(s.time) - 19 * 60);
-      const dBest = Math.abs(parseTimeToMinutes(best.time) - 19 * 60);
-      return dS < dBest ? s : best;
-    });
-  }
-
-  const targetMinutes = intentId === "full-epic" ? 19 * 60 + 30 : 18 * 60 + 30; // easy-evening
-  return shows.reduce((best, s) => {
-    const dS = Math.abs(parseTimeToMinutes(s.time) - targetMinutes);
-    const dBest = Math.abs(parseTimeToMinutes(best.time) - targetMinutes);
-    if (dS < dBest) return s;
-    if (dS > dBest) return best;
-    // tie
-    const sMin = parseTimeToMinutes(s.time);
-    const bestMin = parseTimeToMinutes(best.time);
-    if (intentId === "full-epic") return sMin > bestMin ? s : best; // later wins
-    return sMin < bestMin ? s : best; // easy-evening: earlier wins
-  });
+/** Returns every show that survives the exact route-aware makeability gate.
+ * Non-tonight dates have no clock-based gate; for tonight, a show must start
+ * after the live drive time plus a small arrival buffer. Keeping this helper
+ * plural is intentional: no intent-specific preselection happens before the
+ * complete plans reach scoreVenue(). */
+export function viableShowsForRoute(
+  shows: Show[],
+  when: WhenChoice,
+  nowMinutesOfDay: number,
+  routeDurationMinutes: number
+): Show[] {
+  if (when !== "tonight") return shows;
+  const cutoff = nowMinutesOfDay + routeDurationMinutes + MAKEABLE_ROUTE_BUFFER_MINUTES;
+  return shows.filter((show) => parseTimeToMinutes(show.time) >= cutoff);
 }
 
 function compareShowsChronologically(a: Show, b: Show): number {
@@ -338,12 +332,12 @@ interface RawCandidate {
   shows: Show[];
 }
 
-interface ChosenCandidate extends RawCandidate {
-  show: Show;
+interface RoutedCandidate extends RawCandidate {
+  route: ResolvedRoute;
 }
 
-interface FinalCandidate extends ChosenCandidate {
-  route: { durationMinutes: number; distanceKm: number };
+interface FinalCandidate extends Omit<RoutedCandidate, "shows"> {
+  show: Show;
 }
 
 interface Scored {
@@ -484,14 +478,7 @@ export async function buildRecommendation(
           .filter((c) => c.shows.length > 0)
       : rawCandidates;
 
-  // --- Pick the intent-preferred show per candidate ---
-  const chosen: ChosenCandidate[] = [];
-  for (const c of candidates) {
-    const show = pickShow(c.shows, intentId);
-    if (show) chosen.push({ ...c, show });
-  }
-
-  if (chosen.length === 0) {
+  if (candidates.length === 0) {
     return {
       ok: false,
       reason: `No showtimes found in our data for ${whenLabelOf(when)}. Try a different window.`,
@@ -499,39 +486,39 @@ export async function buildRecommendation(
   }
 
   // --- Live routes, fetched once per unique venue (not per candidate) ---
-  const uniqueVenueIds = [...new Set(chosen.map((c) => c.venue.id))];
+  const uniqueVenueIds = [...new Set(candidates.map((c) => c.venue.id))];
   const routeResults = await Promise.all(
-    uniqueVenueIds.map((id) => fetchRoute(origin, chosen.find((c) => c.venue.id === id)!.coords))
+    uniqueVenueIds.map((id) => fetchRoute(origin, candidates.find((c) => c.venue.id === id)!.coords))
   );
-  const routeByVenue = new Map<string, { durationMinutes: number; distanceKm: number } | null>();
+  const routeByVenue = new Map<string, ResolvedRoute | null>();
   uniqueVenueIds.forEach((id, i) => routeByVenue.set(id, routeResults[i]));
 
-  // --- Finalize: attach the live route, and for tonight, re-check the
-  //     chosen show against real travel time, advancing if it no longer clears ---
+  // --- Finalize: attach the live route, then expand every venue+format into
+  //     every show that survives the exact route-aware makeability gate. ---
   const finalCandidates: FinalCandidate[] = [];
-  for (const c of chosen) {
+  for (const c of candidates) {
     const route = routeByVenue.get(c.venue.id) ?? null;
     if (!route) continue; // this venue's live route call failed — skip, don't guess
-
-    let show = c.show;
-    if (when === "tonight") {
-      const cutoff = nowMinutesOfDay + route.durationMinutes + MAKEABLE_ROUTE_BUFFER_MINUTES;
-      if (parseTimeToMinutes(show.time) < cutoff) {
-        const stillPassing = c.shows.filter((s) => parseTimeToMinutes(s.time) >= cutoff);
-        const nextShow = pickShow(stillPassing, intentId);
-        if (!nextShow) continue; // no show left that's actually reachable — drop the candidate
-        show = nextShow;
-      }
+    const viableShows = viableShowsForRoute(c.shows, when, nowMinutesOfDay, route.durationMinutes);
+    for (const show of viableShows) {
+      finalCandidates.push({
+        venue: c.venue,
+        coords: c.coords,
+        format: c.format,
+        experienceScore: c.experienceScore,
+        districtUrl: c.districtUrl,
+        show,
+        route,
+      });
     }
-
-    finalCandidates.push({ ...c, show, route });
   }
 
   if (finalCandidates.length === 0) {
     return { ok: false, reason: "Couldn't reach live travel times for any matching venue just now. Try again." };
   }
 
-  // --- Score every finalized candidate ---
+  // --- Score every viable show plan. This is deliberately after expansion:
+  //     no intent heuristic is allowed to discard a show before scoring. ---
   const intentWeights = INTENTS[intentId];
   const scored: Scored[] = finalCandidates.map((candidate) => {
     const cabFare = estimateCabFare(candidate.route.distanceKm);
@@ -570,7 +557,7 @@ export async function buildRecommendation(
   // --- valueComparison: Worth Every Rupee only, same venue, meaningfully different format ---
   let valueComparison: RecommendationResult["valueComparison"];
   if (intentId === "worth-every-rupee") {
-    const sameVenueOthers = scored.filter(
+    const sameVenueOthers = eligible.filter(
       (s) =>
         s.candidate.venue.id === winner.candidate.venue.id &&
         s.candidate.format !== winner.candidate.format &&
@@ -578,7 +565,7 @@ export async function buildRecommendation(
     );
     if (sameVenueOthers.length > 0) {
       const bestOther = sameVenueOthers.reduce((best, s) =>
-        s.candidate.experienceScore > best.candidate.experienceScore ? s : best
+        s.score.totalScore > best.score.totalScore ? s : best
       );
       const gap = Math.abs(winner.candidate.experienceScore - bestOther.candidate.experienceScore);
       if (gap >= VALUE_COMPARISON_MIN_GAP) {
@@ -614,6 +601,7 @@ export async function buildRecommendation(
   // provenance: unique venues that made it into `scored` (i.e. produced at
   // least one scored candidate), not just the ones that survived to `eligible`.
   const venuesChecked = new Set(scored.map((s) => s.candidate.venue.id)).size;
+  const routeSource = scored.every((s) => s.candidate.route.source === "live") ? "live" : "estimated";
 
   const result: RecommendationResult = {
     intentLabel: intentWeights.label.toUpperCase(),
@@ -651,11 +639,14 @@ export async function buildRecommendation(
     provenance: {
       venuesChecked,
       showsConsidered: showsConsideredTotal,
+      plansScored: scored.length,
+      routeSource,
     },
   };
 
   const dossier: DossierEntry[] = scored
-    .map((s) => ({
+    .map((s, sourceIndex) => ({
+      planId: `${s.candidate.venue.id}|${s.candidate.format}|${s.candidate.show.date}|${s.candidate.show.time}|${sourceIndex}`,
       venueId: s.candidate.venue.id,
       venueName: s.candidate.venue.name,
       format: s.candidate.format,

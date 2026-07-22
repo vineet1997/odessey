@@ -65,7 +65,7 @@ export function Crossing({ origin, when, intentId, onComplete, onError }: Crossi
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
-  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "LIVE TRAVEL TIMES", "FARES"];
+  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "TRAVEL TIMES", "FARES"];
 
   useEffect(() => {
     let cancelled = false;

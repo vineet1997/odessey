@@ -76,5 +76,12 @@ export interface RecommendationResult {
     /** Total showtimes on the target dates across all venues, before any
      * selection/filtering was applied. */
     showsConsidered: number;
+    /** Complete venue × format × show plans that survived routing and were
+     * passed through the scoring engine. */
+    plansScored: number;
+    /** `estimated` in plain Vite development (and whenever Google's live
+     * route call falls back); `live` only when every scored venue used a
+     * measured Google Routes response. */
+    routeSource: "live" | "estimated";
   };
 }
