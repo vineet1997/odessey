@@ -10,30 +10,27 @@
  * format before comparing the trade-offs. A venue with an IMAX flagship
  * screen and a ₹310 recliner show therefore produces distinct candidates
  * with distinct experience, price, timing, and feasibility inputs. Route
- * calls are still deduplicated per venue, so the richer ranking does not
- * increase Google Routes usage.
+ * outbound calls are still deduplicated per venue; show-specific transit
+ * checks are capped to the most competitive plans.
  *
- * HONEST SIMPLIFICATIONS IN THIS PASS (all deliberate, all documented —
- * see BRIEF.md for what's still queued):
+ * JOURNEY-HOME MODEL:
  *
- * 1. GTFS/last-train data doesn't exist yet (explicitly deferred). The
- *    "is there a way home" signal is a rough, CITYWIDE placeholder — if
- *    the film's end time falls after ~11:15pm, we flag a possible-stranding
- *    warning with generic wording ("public transport may already be
- *    closed"), never a fabricated specific train/station. Once GTFS
- *    lands, LAST_TRANSPORT_CUTOFF_MINUTES becomes a real per-station
- *    lookup instead of one citywide number.
+ * Every show is first scored with a conservative cab-home fallback. The
+ * plans with the strongest possible live-transit score are then checked
+ * against Google's schedule at film-end plus a realistic theatre-exit
+ * buffer and rescored. A live route, a confirmed no-route response, and a
+ * lookup failure remain distinct evidence states in the UI.
  *
- * 2. Only DRIVE-mode routing is used (via api/route.ts), framed as a
- *    generic "cab" leg — not a real metro line, since matching a journey
- *    to an actual DMRC line/station also needs GTFS. journey.lineLabel is
- *    therefore "CAB", not a fake line name.
+ * HONEST SIMPLIFICATIONS STILL IN PLACE:
  *
- * 3. Cab fare is an UNCALIBRATED placeholder formula (BRIEF.md's planned
+ * 1. Cab fare is an UNCALIBRATED placeholder formula (BRIEF.md's planned
  *    hand-calibration against real fare apps hasn't happened yet) — see
  *    estimateCabFare().
  *
- * 4. Ticket price always uses the chosen show's cheapest bookable seat
+ * 2. Google does not always return a transit fare. When that happens the
+ *    model uses a labelled ₹60 estimate rather than pretending it is live.
+ *
+ * 3. Ticket price always uses the chosen show's cheapest bookable seat
  *    class (priceRange.min from the scraper), regardless of intent — a
  *    richer version might prefer a premium seat for "The Full Epic."
  *    Future work.
@@ -46,12 +43,11 @@ import type { Origin, WhenChoice } from "../components/helm/types";
 import type { RecommendationResult } from "../types/recommendation";
 
 const FILM_RUNTIME_MINUTES = 172; // BRIEF.md — The Odyssey's runtime
-// Rough, CITYWIDE placeholder for "does public transport still run" — see
-// module doc comment #1. BRIEF.md's own research found last trains cluster
-// around 11:20-11:50pm; 11:15pm is a deliberately conservative cutoff.
-const LAST_TRANSPORT_CUTOFF_MINUTES = 23 * 60 + 15;
+const THEATRE_EXIT_BUFFER_MINUTES = 15;
+const TRANSIT_FINALIST_LIMIT = 12;
+const TRANSIT_FARE_FALLBACK_RUPEES = 60;
 
-// Uncalibrated placeholder — see module doc comment #3.
+// Uncalibrated placeholder — see module doc comment #1.
 const CAB_BASE_FARE_RUPEES = 60;
 const CAB_PER_KM_RUPEES = 18;
 
@@ -111,12 +107,35 @@ interface RouteApiResponse {
   source: "live" | "estimated" | "unavailable";
   durationMinutes?: number;
   distanceKm?: number;
+  reasonCode?: "not_configured" | "no_route" | "service_error";
+  transit?: {
+    departureTime: string;
+    departureStop: string;
+    lineName: string;
+    lineColorHex?: string;
+    vehicleType?: string;
+    fareRupees?: number;
+  };
 }
 
 interface ResolvedRoute {
   source: "live" | "estimated";
   durationMinutes: number;
   distanceKm: number;
+}
+
+type ReturnEvidence = "live" | "no-route" | "unverified";
+
+interface ReturnJourney {
+  evidence: ReturnEvidence;
+  durationMinutes: number;
+  costRupees: number;
+  costIsEstimate: boolean;
+  departureTime?: string;
+  departureStop?: string;
+  lineName?: string;
+  lineColorHex?: string;
+  vehicleType?: string;
 }
 
 /** One scored candidate (venue x format x show), shaped for the dossier/map
@@ -143,6 +162,7 @@ export interface DossierEntry {
   availability: string | null;
   isWinner: boolean;
   isRunnerUp: boolean;
+  returnEvidence: ReturnEvidence;
   /** Present for 4DX candidates — they're never eligible to win, but still
    * appear in the dossier carrying the reason why. */
   warning?: string;
@@ -204,6 +224,29 @@ function estimateCabFare(distanceKm: number): number {
   return Math.round((CAB_BASE_FARE_RUPEES + CAB_PER_KM_RUPEES * distanceKm) / 10) * 10;
 }
 
+/** The earliest realistic time a person can start the trip home. The date
+ * rollover is handled by Date, so a late show on Friday can correctly ask
+ * for a Saturday-after-midnight transit route. */
+export function departureTimeForShow(show: Pick<Show, "date" | "time">): string {
+  const midnightIst = new Date(`${show.date}T00:00:00+05:30`);
+  const departureMinutes =
+    parseTimeToMinutes(show.time) + FILM_RUNTIME_MINUTES + THEATRE_EXIT_BUFFER_MINUTES;
+  return new Date(midnightIst.getTime() + departureMinutes * 60_000).toISOString();
+}
+
+function journeyKeyOf(candidate: Pick<FinalCandidate, "venue" | "show">): string {
+  return `${candidate.venue.id}|${candidate.show.date}|${candidate.show.time}`;
+}
+
+function formatTransitTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+}
+
 async function fetchRoute(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number }
@@ -226,6 +269,61 @@ async function fetchRoute(
     return { source: data.source, durationMinutes: data.durationMinutes, distanceKm: data.distanceKm };
   } catch {
     return null; // network error — this venue just gets excluded, not guessed
+  }
+}
+
+async function fetchTransitHome(
+  venue: { lat: number; lng: number },
+  origin: { lat: number; lng: number },
+  departureTime: string,
+  cabRoute: ResolvedRoute
+): Promise<ReturnJourney> {
+  const cabFallback: ReturnJourney = {
+    evidence: "unverified",
+    durationMinutes: cabRoute.durationMinutes,
+    costRupees: estimateCabFare(cabRoute.distanceKm),
+    costIsEstimate: true,
+  };
+
+  try {
+    const res = await fetch("/api/route", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        origin: venue,
+        destination: origin,
+        mode: "TRANSIT",
+        departureTime,
+      }),
+    });
+    if (!res.ok) return cabFallback;
+    const data = (await res.json()) as RouteApiResponse;
+    if (data.source === "unavailable") {
+      return { ...cabFallback, evidence: data.reasonCode === "no_route" ? "no-route" : "unverified" };
+    }
+    if (
+      data.source !== "live" ||
+      typeof data.durationMinutes !== "number" ||
+      !data.transit?.departureTime ||
+      !data.transit.departureStop ||
+      !data.transit.lineName
+    ) {
+      return cabFallback;
+    }
+
+    return {
+      evidence: "live",
+      durationMinutes: data.durationMinutes,
+      costRupees: data.transit.fareRupees ?? TRANSIT_FARE_FALLBACK_RUPEES,
+      costIsEstimate: data.transit.fareRupees === undefined,
+      departureTime: data.transit.departureTime,
+      departureStop: data.transit.departureStop,
+      lineName: data.transit.lineName,
+      lineColorHex: data.transit.lineColorHex,
+      vehicleType: data.transit.vehicleType,
+    };
+  } catch {
+    return cabFallback;
   }
 }
 
@@ -343,9 +441,32 @@ interface FinalCandidate extends Omit<RoutedCandidate, "shows"> {
 interface Scored {
   candidate: FinalCandidate;
   cabFare: number;
-  returnAvailable: boolean;
+  returnJourney: ReturnJourney;
   showEndMinutes: number;
   score: ScoreResult;
+}
+
+function scoreCandidateWithReturn(
+  candidate: FinalCandidate,
+  returnJourney: ReturnJourney,
+  intentWeights: (typeof INTENTS)[IntentId]
+): Scored {
+  const cabFare = estimateCabFare(candidate.route.distanceKm);
+  const showEndMinutes = parseTimeToMinutes(candidate.show.time) + FILM_RUNTIME_MINUTES;
+  const context: UserContext = {
+    ticketPriceRupeesPerPerson: candidate.show.priceRange!.min,
+    outboundTransportCostRupees: cabFare,
+    returnTransportCostRupees: returnJourney.costRupees,
+    outboundDurationMinutes: candidate.route.durationMinutes,
+    returnDurationMinutes: returnJourney.durationMinutes,
+    returnAvailable: returnJourney.evidence === "live",
+  };
+  const score = scoreVenue(
+    { id: candidate.venue.id, name: candidate.venue.name, experienceScore: candidate.experienceScore },
+    context,
+    intentWeights
+  );
+  return { candidate, cabFare, returnJourney, showEndMinutes, score };
 }
 
 function buildJourneyLegs(scored: Scored) {
@@ -354,17 +475,37 @@ function buildJourneyLegs(scored: Scored) {
     lineColorHex: "#2E6E73", // --sea — neutral "journey" color, not a fabricated metro line
     durationMinutes: scored.candidate.route.durationMinutes,
     costRupees: scored.cabFare,
+    costIsEstimate: true,
   };
 
-  const returnHeadline = scored.returnAvailable
-    ? `Show ends around ${minutesTo12h(scored.showEndMinutes)} — public transport should still be running.`
-    : `Show ends around ${minutesTo12h(scored.showEndMinutes)} — public transport may already be closed for the night.`;
+  const showEnd = minutesTo12h(scored.showEndMinutes);
+  const returnJourney = scored.returnJourney;
+  const isLive = returnJourney.evidence === "live";
+  const isNoRoute = returnJourney.evidence === "no-route";
+  const returnHeadline = isLive
+    ? `Route home found: ${formatTransitTime(returnJourney.departureTime!)} from ${returnJourney.departureStop}.`
+    : isNoRoute
+      ? `No public-transport route found after the ${showEnd} finish.`
+      : `Public transport after the ${showEnd} finish could not be verified.`;
 
   const returnLeg = {
-    ...outbound,
-    status: (scored.returnAvailable ? "good" : "stranded") as "good" | "stranded",
+    lineLabel: isLive ? returnJourney.lineName! : "CAB",
+    lineColorHex: isLive ? returnJourney.lineColorHex ?? "#C9A227" : "#2E6E73",
+    durationMinutes: returnJourney.durationMinutes,
+    costRupees: returnJourney.costRupees,
+    costIsEstimate: returnJourney.costIsEstimate,
+    status: (isLive ? "good" : isNoRoute ? "stranded" : "unverified") as
+      | "good"
+      | "stranded"
+      | "unverified",
     headline: returnHeadline,
-    ...(scored.returnAvailable ? {} : { cabFallbackLabel: `Cab back ≈ ₹${scored.cabFare}` }),
+    ...(isLive
+      ? {
+          evidenceLabel: `${returnJourney.lineName}${
+            returnJourney.vehicleType ? ` · ${returnJourney.vehicleType.replaceAll("_", " ")}` : ""
+          } · SHOW ENDS ~${showEnd}`,
+        }
+      : { cabFallbackLabel: `Cab back ≈ ₹${scored.cabFare}` }),
   };
 
   return { outbound, returnLeg };
@@ -517,31 +658,70 @@ export async function buildRecommendation(
     return { ok: false, reason: "Couldn't reach live travel times for any matching venue just now. Try again." };
   }
 
-  // --- Score every viable show plan. This is deliberately after expansion:
-  //     no intent heuristic is allowed to discard a show before scoring. ---
+  // --- Score every viable show plan with a conservative cab-home fallback.
+  //     Then spend live transit calls only on the plans with the strongest
+  //     possible score if public transport is available. No show is removed
+  //     before scoring, and the bounded shortlist is based on score potential
+  //     rather than one preselected show per venue/format. ---
   const intentWeights = INTENTS[intentId];
-  const scored: Scored[] = finalCandidates.map((candidate) => {
+  const fallbackScored = finalCandidates.map((candidate) => {
     const cabFare = estimateCabFare(candidate.route.distanceKm);
-    const showStartMinutes = parseTimeToMinutes(candidate.show.time);
-    const showEndMinutes = showStartMinutes + FILM_RUNTIME_MINUTES;
-    const returnAvailable = showEndMinutes <= LAST_TRANSPORT_CUTOFF_MINUTES;
-
-    const context: UserContext = {
-      ticketPriceRupeesPerPerson: candidate.show.priceRange!.min,
-      outboundTransportCostRupees: cabFare,
-      returnTransportCostRupees: cabFare,
-      outboundDurationMinutes: candidate.route.durationMinutes,
-      returnDurationMinutes: candidate.route.durationMinutes,
-      returnAvailable,
-    };
-
-    const score = scoreVenue(
-      { id: candidate.venue.id, name: candidate.venue.name, experienceScore: candidate.experienceScore },
-      context,
+    return scoreCandidateWithReturn(
+      candidate,
+      {
+        evidence: "unverified",
+        durationMinutes: candidate.route.durationMinutes,
+        costRupees: cabFare,
+        costIsEstimate: true,
+      },
       intentWeights
     );
+  });
 
-    return { candidate, cabFare, returnAvailable, showEndMinutes, score };
+  const finalistPotential = new Map<string, { candidate: FinalCandidate; optimisticScore: number }>();
+  for (const fallback of fallbackScored) {
+    if (isFourDxFormat(fallback.candidate.format)) continue;
+    const optimistic = scoreCandidateWithReturn(
+      fallback.candidate,
+      {
+        evidence: "live",
+        durationMinutes: 1,
+        costRupees: 0,
+        costIsEstimate: false,
+      },
+      intentWeights
+    );
+    const key = journeyKeyOf(fallback.candidate);
+    const prior = finalistPotential.get(key);
+    if (!prior || optimistic.score.totalScore > prior.optimisticScore) {
+      finalistPotential.set(key, {
+        candidate: fallback.candidate,
+        optimisticScore: optimistic.score.totalScore,
+      });
+    }
+  }
+
+  const transitFinalists = [...finalistPotential.entries()]
+    .sort((a, b) => b[1].optimisticScore - a[1].optimisticScore)
+    .slice(0, TRANSIT_FINALIST_LIMIT);
+  const transitResults = await Promise.all(
+    transitFinalists.map(([, { candidate }]) =>
+      fetchTransitHome(
+        candidate.coords,
+        origin,
+        departureTimeForShow(candidate.show),
+        candidate.route
+      )
+    )
+  );
+  const transitByJourney = new Map<string, ReturnJourney>();
+  transitFinalists.forEach(([key], index) => transitByJourney.set(key, transitResults[index]));
+
+  const scored: Scored[] = fallbackScored.map((fallback) => {
+    const transit = transitByJourney.get(journeyKeyOf(fallback.candidate));
+    return transit
+      ? scoreCandidateWithReturn(fallback.candidate, transit, intentWeights)
+      : fallback;
   });
 
   // --- 4DX is never eligible to win or runner-up ---
@@ -641,6 +821,8 @@ export async function buildRecommendation(
       showsConsidered: showsConsideredTotal,
       plansScored: scored.length,
       routeSource,
+      transitPlansChecked: transitFinalists.length,
+      returnEvidence: winner.returnJourney.evidence,
     },
   };
 
@@ -664,6 +846,7 @@ export async function buildRecommendation(
       availability: s.candidate.show.availability,
       isWinner: s === winner,
       isRunnerUp: s === runnerUp,
+      returnEvidence: s.returnJourney.evidence,
       warning: isFourDxFormat(s.candidate.format) ? formatWarnings["4DX-2D"] : undefined,
     }))
     .sort((a, b) => b.totalScore - a.totalScore);

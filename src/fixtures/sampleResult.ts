@@ -133,5 +133,7 @@ export const sampleResult: RecommendationResult = {
     showsConsidered: 47,
     plansScored: 31,
     routeSource: "live",
+    transitPlansChecked: 12,
+    returnEvidence: "live",
   },
 };

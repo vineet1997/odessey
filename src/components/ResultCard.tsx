@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { toPng } from "html-to-image";
-import { AlertTriangle, ChevronDown, Loader2, MapPin, Share2, Ticket, TrainFront } from "lucide-react";
+import { AlertTriangle, ChevronDown, CircleHelp, Loader2, MapPin, Share2, Ticket, TrainFront } from "lucide-react";
 import type { RecommendationResult } from "../types/recommendation";
 
 /** DESIGN.md: "share button renders it to a 1080x1350 PNG with the wordmark
@@ -137,6 +137,7 @@ export function ResultCard({ result }: ResultCardProps) {
 
   const { journey } = result;
   const returnIsGood = journey.return.status === "good";
+  const returnIsUnverified = journey.return.status === "unverified";
 
   return (
     <div
@@ -218,30 +219,42 @@ export function ResultCard({ result }: ResultCardProps) {
             </span>
             <span>OUTBOUND · {journey.outbound.durationMinutes} MIN</span>
           </span>
-          <span className="text-ink">₹{journey.outbound.costRupees}</span>
+          <span className="text-ink">
+            {journey.outbound.costIsEstimate ? "≈" : ""}₹{journey.outbound.costRupees}
+          </span>
         </div>
 
         {/* Return — the signature element */}
         <div
           className="flex flex-col gap-1 rounded-md px-3 py-2.5"
           style={{
-            backgroundColor: returnIsGood ? "var(--gold)" : "var(--wine)",
+            backgroundColor: returnIsGood
+              ? "var(--gold)"
+              : returnIsUnverified
+                ? "var(--sea)"
+                : "var(--wine)",
             color: returnIsGood ? "var(--bg)" : "var(--ink)",
           }}
         >
           <span className="flex items-center gap-2 text-[11px] font-medium leading-snug tracking-wide">
             {returnIsGood ? (
               <TrainFront size={14} strokeWidth={1.75} />
+            ) : returnIsUnverified ? (
+              <CircleHelp size={14} strokeWidth={1.75} />
             ) : (
               <AlertTriangle size={14} strokeWidth={1.75} />
             )}
             {journey.return.headline}
           </span>
+          {journey.return.evidenceLabel && (
+            <span className="text-[10px] font-medium opacity-80">{journey.return.evidenceLabel}</span>
+          )}
           {!returnIsGood && journey.return.cabFallbackLabel && (
             <span className="text-[11px] font-medium">{journey.return.cabFallbackLabel}</span>
           )}
           <span className="text-[10px] opacity-80">
-            RETURN · {journey.return.durationMinutes} MIN · ₹{journey.return.costRupees}
+            RETURN · {journey.return.durationMinutes} MIN · {journey.return.costIsEstimate ? "≈" : ""}₹
+            {journey.return.costRupees}
           </span>
         </div>
 

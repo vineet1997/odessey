@@ -29,7 +29,7 @@ const WHEN_LOG_LABEL: Record<WhenChoice, string> = {
 // can run longer than that without penalty. FETCH_TIMEOUT_MS is a safety cap distinct from
 // DESIGN.md's 1.5s *display* cap — a genuinely slow network shouldn't hang the app forever.
 const MIN_VISUAL_DURATION_MS = 600;
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 15000;
 const LOG_STEP_INTERVAL_MS = 300;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T): Promise<T> {
@@ -65,7 +65,7 @@ export function Crossing({ origin, when, intentId, onComplete, onError }: Crossi
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
-  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "TRAVEL TIMES", "FARES"];
+  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "TRAVEL TIMES", "ROUTE HOME"];
 
   useEffect(() => {
     let cancelled = false;

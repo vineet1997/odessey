@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeTargetDates,
+  departureTimeForShow,
   filterMakeableShows,
   isFourDxFormat,
   isoDateOf,
@@ -43,6 +44,20 @@ describe("viableShowsForRoute — score every viable show", () => {
       show({ date: "2026-07-26", time: "7:45 PM" }),
     ];
     expect(viableShowsForRoute(shows, "weekend", 0, 120)).toEqual(shows);
+  });
+});
+
+describe("departureTimeForShow", () => {
+  it("adds the film runtime and theatre-exit buffer in IST", () => {
+    expect(departureTimeForShow(show({ date: "2026-07-22", time: "7:00 PM" }))).toBe(
+      "2026-07-22T16:37:00.000Z"
+    );
+  });
+
+  it("rolls after-midnight return checks onto the next IST day", () => {
+    expect(departureTimeForShow(show({ date: "2026-07-22", time: "10:30 PM" }))).toBe(
+      "2026-07-22T20:07:00.000Z"
+    );
   });
 });
 

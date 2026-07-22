@@ -36,6 +36,7 @@ interface RouteRequestBody {
   origin: LatLng;
   destination: LatLng;
   mode?: TravelMode;
+  departureTime?: string;
 }
 
 interface RouteResult {
@@ -43,6 +44,25 @@ interface RouteResult {
   durationMinutes: number;
   distanceKm: number;
   reason?: string; // present only for "estimated"
+  transit?: {
+    departureTime: string;
+    departureStop: string;
+    lineName: string;
+    lineColorHex?: string;
+    vehicleType?: string;
+    fareRupees?: number;
+  };
+}
+
+type RouteUnavailableReason = "not_configured" | "no_route" | "service_error";
+
+class RouteUnavailableError extends Error {
+  constructor(
+    readonly reasonCode: RouteUnavailableReason,
+    message: string
+  ) {
+    super(message);
+  }
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -68,7 +88,14 @@ function parseBody(json: unknown): RouteRequestBody | null {
     typeof body.mode === "string" && VALID_MODES.includes(body.mode as TravelMode)
       ? (body.mode as TravelMode)
       : "DRIVE";
-  return { origin: body.origin, destination: body.destination, mode };
+  const departureTime = body.departureTime;
+  if (
+    departureTime !== undefined &&
+    (typeof departureTime !== "string" || !Number.isFinite(Date.parse(departureTime)))
+  ) {
+    return null;
+  }
+  return { origin: body.origin, destination: body.destination, mode, departureTime };
 }
 
 /** Great-circle distance, km. */
@@ -101,7 +128,8 @@ async function callGoogleRoutes(
   origin: LatLng,
   destination: LatLng,
   mode: TravelMode,
-  apiKey: string
+  apiKey: string,
+  departureTime?: string
 ): Promise<RouteResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GOOGLE_TIMEOUT_MS);
@@ -113,7 +141,17 @@ async function callGoogleRoutes(
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters",
+        "X-Goog-FieldMask": [
+          "routes.duration",
+          "routes.distanceMeters",
+          ...(mode === "TRANSIT"
+            ? [
+                "routes.travelAdvisory.transitFare",
+                "routes.legs.steps.travelMode",
+                "routes.legs.steps.transitDetails",
+              ]
+            : []),
+        ].join(","),
       },
       body: JSON.stringify({
         origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
@@ -122,6 +160,7 @@ async function callGoogleRoutes(
         },
         travelMode: mode,
         ...(mode === "DRIVE" ? { routingPreference: "TRAFFIC_AWARE" } : {}),
+        ...(mode === "TRANSIT" && departureTime ? { departureTime } : {}),
       }),
     });
 
@@ -130,11 +169,34 @@ async function callGoogleRoutes(
     }
 
     const data = (await res.json()) as {
-      routes?: Array<{ duration?: string; distanceMeters?: number }>;
+      routes?: Array<{
+        duration?: string;
+        distanceMeters?: number;
+        travelAdvisory?: {
+          transitFare?: { currencyCode?: string; units?: string; nanos?: number };
+        };
+        legs?: Array<{
+          steps?: Array<{
+            travelMode?: string;
+            transitDetails?: {
+              stopDetails?: {
+                departureTime?: string;
+                departureStop?: { name?: string };
+              };
+              transitLine?: {
+                name?: string;
+                nameShort?: string;
+                color?: string;
+                vehicle?: { type?: string; name?: { text?: string } };
+              };
+            };
+          }>;
+        }>;
+      }>;
     };
     const route = data.routes?.[0];
     if (!route?.duration || typeof route.distanceMeters !== "number") {
-      throw new Error("Routes API returned no usable route");
+      throw new RouteUnavailableError("no_route", "Routes API returned no usable route");
     }
 
     // duration comes back as e.g. "1834s"
@@ -143,11 +205,42 @@ async function callGoogleRoutes(
       throw new Error("Routes API returned an unparseable duration");
     }
 
-    return {
+    const result: RouteResult = {
       source: "live",
       durationMinutes: Math.round(seconds / 60),
       distanceKm: Math.round((route.distanceMeters / 1000) * 10) / 10,
     };
+
+    if (mode === "TRANSIT") {
+      const transitStep = route.legs
+        ?.flatMap((leg) => leg.steps ?? [])
+        .find((step) => step.travelMode === "TRANSIT" && step.transitDetails);
+      const details = transitStep?.transitDetails;
+      const stopDetails = details?.stopDetails;
+      const line = details?.transitLine;
+      if (!stopDetails?.departureTime || !stopDetails.departureStop?.name || !line) {
+        throw new RouteUnavailableError("no_route", "Transit route had no scheduled transit step");
+      }
+
+      const fare = route.travelAdvisory?.transitFare;
+      const units = fare?.units ? Number(fare.units) : 0;
+      const nanos = fare?.nanos ?? 0;
+      const fareRupees =
+        fare?.currencyCode === "INR" && Number.isFinite(units)
+          ? Math.round(units + nanos / 1_000_000_000)
+          : undefined;
+
+      result.transit = {
+        departureTime: stopDetails.departureTime,
+        departureStop: stopDetails.departureStop.name,
+        lineName: line.nameShort || line.name || line.vehicle?.name?.text || "PUBLIC TRANSIT",
+        ...(line.color && /^#[0-9a-f]{6}$/i.test(line.color) ? { lineColorHex: line.color } : {}),
+        ...(line.vehicle?.type ? { vehicleType: line.vehicle.type } : {}),
+        ...(fareRupees !== undefined ? { fareRupees } : {}),
+      };
+    }
+
+    return result;
   } finally {
     clearTimeout(timeout);
   }
@@ -176,20 +269,34 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
-  const { origin, destination, mode } = parsedBody;
+  const { origin, destination, mode, departureTime } = parsedBody;
   const apiKey = process.env.GOOGLE_MAPS_SERVER_KEY;
 
   if (!apiKey) {
-    // No key configured yet — degrade to the estimate rather than error out.
-    // Real callers should still work end-to-end before the key exists.
+    // Driving can degrade to a geometric estimate. Transit cannot: inventing
+    // a scheduled service would be worse than returning an explicit unknown.
+    if (mode === "TRANSIT") {
+      return Response.json({
+        source: "unavailable",
+        reasonCode: "not_configured",
+        error: "GOOGLE_MAPS_SERVER_KEY not configured",
+      });
+    }
     return Response.json(estimateRoute(origin, destination, "GOOGLE_MAPS_SERVER_KEY not configured"));
   }
 
   try {
-    const result = await callGoogleRoutes(origin, destination, mode ?? "DRIVE", apiKey);
+    const result = await callGoogleRoutes(origin, destination, mode ?? "DRIVE", apiKey, departureTime);
     return Response.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    if (mode === "TRANSIT") {
+      return Response.json({
+        source: "unavailable",
+        reasonCode: err instanceof RouteUnavailableError ? err.reasonCode : "service_error",
+        error: message,
+      });
+    }
     return Response.json(estimateRoute(origin, destination, `Live call failed: ${message}`));
   }
 }

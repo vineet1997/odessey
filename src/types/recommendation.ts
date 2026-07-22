@@ -6,13 +6,14 @@ import type { ScoreResult } from "../scoring/score";
  * needed to produce the same shape from real data instead of a fixture.
  */
 
-export type ReturnStatus = "good" | "stranded";
+export type ReturnStatus = "good" | "stranded" | "unverified";
 
 export interface JourneyLeg {
   lineLabel: string;
   lineColorHex: string;
   durationMinutes: number;
   costRupees: number;
+  costIsEstimate?: boolean;
 }
 
 export interface ReturnLeg extends JourneyLeg {
@@ -21,6 +22,7 @@ export interface ReturnLeg extends JourneyLeg {
   headline: string;
   /** Only present when status === "stranded" — the cab fallback range. */
   cabFallbackLabel?: string;
+  evidenceLabel?: string;
 }
 
 export interface RunnerUp {
@@ -83,5 +85,7 @@ export interface RecommendationResult {
      * route call falls back); `live` only when every scored venue used a
      * measured Google Routes response. */
     routeSource: "live" | "estimated";
+    transitPlansChecked: number;
+    returnEvidence: "live" | "no-route" | "unverified";
   };
 }

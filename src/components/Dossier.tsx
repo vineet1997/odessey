@@ -114,7 +114,9 @@ export function Dossier({ result, dossier, origin }: DossierProps) {
         <div id="full-research" className="flex flex-col gap-4">
           <p className="font-body text-[14px] leading-relaxed text-ink-muted">
             Every reachable show was scored as its own plan. The map uses each venue&rsquo;s highest-ranked
-            plan; the ledger below keeps every showtime so you can audit the full comparison.
+            plan; the ledger below keeps every showtime so you can audit the full comparison. Live transit
+            is checked for the {result.provenance.transitPlansChecked} plans with the strongest potential;
+            the rest retain the conservative cab-home fallback used in their score.
           </p>
           <MapExplorer origin={origin} venues={dossier} />
           <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-ink-muted">
@@ -132,7 +134,7 @@ export function Dossier({ result, dossier, origin }: DossierProps) {
       {/* f. Provenance strip */}
       <div className="border-t border-border pt-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-muted">
         CHECKED {result.provenance.showsConsidered} LISTED SHOWS · SCORED {result.provenance.plansScored} VIABLE
-        PLANS · DISTRICT {result.freshnessLabel} ·{" "}
+        PLANS · {result.provenance.transitPlansChecked} TRANSIT CHECKS · DISTRICT {result.freshnessLabel} ·{" "}
         {result.provenance.routeSource === "live"
           ? "ROUTES LIVE VIA GOOGLE"
           : isLocalhost
@@ -195,7 +197,8 @@ function AlternativeRow({ entry }: { entry: DossierEntry }) {
             )}
           </div>
           <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-ink-muted">
-            {entry.format} · {entry.showtime} · {entry.dateLabel} · {entry.durationMinutes} MIN AWAY
+            {entry.format} · {entry.showtime} · {entry.dateLabel} · {entry.durationMinutes} MIN AWAY ·{" "}
+            {returnEvidenceLabel(entry.returnEvidence)}
           </div>
         </div>
         <span className="shrink-0 font-mono text-[12px] text-ink">
@@ -225,7 +228,8 @@ function DossierRow({ entry }: { entry: DossierEntry }) {
         {entry.isWinner && <span className="text-[10px] text-gold-bright">★ THE PICK</span>}
         {entry.isRunnerUp && <span className="text-[10px] text-ink-muted">RUNNER-UP</span>}
         <span>
-          {entry.showtime} · {entry.dateLabel} · {entry.durationMinutes} MIN AWAY · SCORE{" "}
+          {entry.showtime} · {entry.dateLabel} · {entry.durationMinutes} MIN AWAY ·{" "}
+          {returnEvidenceLabel(entry.returnEvidence)} · SCORE{" "}
           {(entry.totalScore * 100).toFixed(0)}
         </span>
       </div>
@@ -233,6 +237,12 @@ function DossierRow({ entry }: { entry: DossierEntry }) {
       {entry.warning && <p className="mt-1 font-body text-[13px] italic text-wine-bright">{entry.warning}</p>}
     </div>
   );
+}
+
+function returnEvidenceLabel(evidence: DossierEntry["returnEvidence"]): string {
+  if (evidence === "live") return "TRANSIT FOUND";
+  if (evidence === "no-route") return "CAB HOME";
+  return "TRANSIT UNVERIFIED";
 }
 
 export default Dossier;
