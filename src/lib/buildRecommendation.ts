@@ -429,6 +429,9 @@ export async function buildRecommendation(
 
   // --- Assemble venue x format candidates from live showtimes on the target dates ---
   const rawCandidates: RawCandidate[] = [];
+  // provenance: every showtime on the target dates, across every venue,
+  // counted before any selection/filtering — the dossier's honesty number.
+  let showsConsideredTotal = 0;
   for (const venue of venues) {
     const coords = getVenueCoords(venue);
     if (!coords) continue; // no verified coordinates yet — excluded, not guessed
@@ -439,6 +442,7 @@ export async function buildRecommendation(
     const onTargetDates = venueShowtimes.showtimes.filter(
       (s) => targetDates.includes(s.date) && s.priceRange !== null
     );
+    showsConsideredTotal += onTargetDates.length;
     if (onTargetDates.length === 0) continue;
 
     const byFormat = new Map<string, Show[]>();
@@ -607,6 +611,10 @@ export async function buildRecommendation(
 
   const { outbound, returnLeg } = buildJourneyLegs(winner);
 
+  // provenance: unique venues that made it into `scored` (i.e. produced at
+  // least one scored candidate), not just the ones that survived to `eligible`.
+  const venuesChecked = new Set(scored.map((s) => s.candidate.venue.id)).size;
+
   const result: RecommendationResult = {
     intentLabel: intentWeights.label.toUpperCase(),
     freshnessLabel: formatFreshnessLabel(meta.generatedAt),
@@ -639,6 +647,11 @@ export async function buildRecommendation(
     districtUrl: winner.candidate.districtUrl ?? "https://www.district.in/movies/the-odyssey-movie-tickets-in-delhi-ncr-MV187151",
     valueComparison,
     seatsLine: seatsLineOf(winner.candidate.show),
+    directionsUrl: `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${winner.candidate.coords.lat},${winner.candidate.coords.lng}`,
+    provenance: {
+      venuesChecked,
+      showsConsidered: showsConsideredTotal,
+    },
   };
 
   const dossier: DossierEntry[] = scored

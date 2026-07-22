@@ -65,4 +65,16 @@ export interface RecommendationResult {
   /** e.g. "132 OF 381 SEATS LEFT · FILLING FAST" — present only when the
    * winning show carries live seat counts. Not rendered yet. */
   seatsLine?: string;
+  /** Google Maps deep link, origin -> winning venue. What the Directions
+   * button actually opens. */
+  directionsUrl: string;
+  /** The dossier's honesty numbers — how much of the real candidate set this
+   * recommendation was drawn from. */
+  provenance: {
+    /** Unique venues that produced at least one scored candidate. */
+    venuesChecked: number;
+    /** Total showtimes on the target dates across all venues, before any
+     * selection/filtering was applied. */
+    showsConsidered: number;
+  };
 }

@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { RotateCcw, Map as MapIcon, ChevronUp } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { Prologue } from "./components/Prologue";
 import { Helm } from "./components/Helm";
 import { Crossing } from "./components/Crossing";
 import { ResultCard } from "./components/ResultCard";
-import { MapExplorer } from "./components/MapExplorer";
+import { Dossier } from "./components/Dossier";
 import { INTENTS, type IntentId } from "./scoring/score";
 import type { HelmAnswers } from "./components/helm/types";
 import type { RecommendationResult } from "./types/recommendation";
@@ -25,7 +25,6 @@ function App() {
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [dossier, setDossier] = useState<DossierEntry[]>([]);
   const [errorReason, setErrorReason] = useState<string | null>(null);
-  const [exploreOpen, setExploreOpen] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -103,7 +102,6 @@ function App() {
   }
 
   if (stage === "result" && result && answers) {
-    const venueCount = new Set(dossier.map((d) => d.venueId)).size;
     return (
       <div className="flex min-h-screen w-full flex-col items-center gap-5 bg-bg px-4 py-10">
         <div ref={resultRef} className="w-full">
@@ -116,20 +114,7 @@ function App() {
         <div className="flex w-full max-w-[480px] flex-col items-center gap-4">
           <IntentSwitcher active={answers.intentId} onSwitch={switchIntent} />
 
-          {dossier.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setExploreOpen((open) => !open)}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border py-2.5 font-mono text-[11px] uppercase tracking-widest text-gold-bright transition-colors duration-150 hover:border-gold/40"
-            >
-              {exploreOpen ? <ChevronUp size={14} strokeWidth={1.75} /> : <MapIcon size={14} strokeWidth={1.75} />}
-              {exploreOpen ? "Hide the map" : `See all ${venueCount} venues we checked`}
-            </button>
-          )}
-
-          {exploreOpen && (
-            <MapExplorer origin={answers.origin} venues={dossier} />
-          )}
+          <Dossier result={result} dossier={dossier} origin={answers.origin} />
 
           <button
             type="button"

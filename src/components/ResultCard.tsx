@@ -191,6 +191,17 @@ export function ResultCard({ result }: ResultCardProps) {
         <div className="mt-2 font-mono text-[12px] uppercase tracking-widest text-ink-muted">
           {result.dateLabel} · {result.seatClass} · {result.priceLabel}
         </div>
+        {result.seatsLine && (
+          <div
+            className={`mt-1 font-mono text-[11px] uppercase tracking-widest ${
+              result.seatsLine.includes("FILLING") || result.seatsLine.includes("ALMOST")
+                ? "text-gold-bright"
+                : "text-ink-muted"
+            }`}
+          >
+            {result.seatsLine}
+          </div>
+        )}
       </div>
 
       {/* 5. Journey ledger */}
@@ -286,9 +297,7 @@ export function ResultCard({ result }: ResultCardProps) {
         </button>
         <button
           type="button"
-          onClick={() => {
-            /* stub — Google Maps deep link wiring is out of scope for this pass */
-          }}
+          onClick={() => window.open(result.directionsUrl, "_blank", "noopener,noreferrer")}
           className="flex min-h-[48px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-border font-mono text-[12px] uppercase tracking-widest text-gold-bright transition-transform duration-150 active:scale-[0.97]"
           aria-label="Directions"
         >
