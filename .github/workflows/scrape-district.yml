@@ -8,22 +8,21 @@ name: Scrape District showtimes
 # When this job pushes a change, Vercel's git integration picks up the
 # push and redeploys automatically — that's the whole "static app fed
 # by a robot" mechanism. No Vercel-side webhook/token needed here.
+#
+# Triggering (2026-07-22): NOT an `on: schedule` cron. Measured against
+# this repo's actual run history (GitHub's REST API), GitHub's own
+# scheduler was firing this every 1-3.5 hours instead of every 30
+# minutes — a documented platform limitation where sub-hourly schedule
+# triggers get silently coalesced/dropped on the shared runner queue,
+# not a bug in the cron expression. Real 30-min cadence now comes from
+# a Supabase pg_cron job (project tiycurqyfqdcsfrycypm) calling
+# POST /repos/vineet1997/odessey/actions/workflows/scrape-district.yml/dispatches
+# on a real schedule, landing here as workflow_dispatch below. GitHub
+# Actions still does 100% of the actual scrape-and-commit work — only
+# the trigger moved.
 
 on:
-  schedule:
-    # Every 30 minutes. GitHub's scheduler is best-effort and can run a
-    # few minutes late, especially at busy times — that's fine for this.
-    #
-    # Note (2026-07-21): brand-new schedule triggers on GitHub Actions can
-    # take 1-3 hours to start firing after being added, even though the
-    # workflow itself is valid (confirmed working via manual dispatch
-    # within minutes of adding this file). If scheduled runs are still
-    # absent well beyond that window, check: Settings -> Actions ->
-    # General isn't restricting scheduled workflows, and that this file
-    # is still present on the default branch (schedule only reads from
-    # the branch's latest commit).
-    - cron: "*/30 * * * *"
-  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+  workflow_dispatch: {} # fired every 30 min by Supabase pg_cron; also usable manually from the Actions tab
 
 permissions:
   contents: write
