@@ -347,6 +347,11 @@ Recent verification receipts:
 - Evidence-bounded format reasoning passed 40 unit tests and a production
   build. Coverage now checks every live exact format label, while unknown
   labels deliberately fall back to measured cost, time, and screen-score facts.
+- The Passage passed 48 unit tests and a production build. The real exported
+  PNG was inspected at its native 1080 × 1350 dimensions and mobile preview
+  scale: 1.6 MB, no console errors, no horizontal overflow, body scroll locked
+  while composing, focus restored on close, and no precise origin in the
+  artifact model.
 
 ---
 
@@ -412,6 +417,35 @@ or artifact, name the trade-off, and close with what changed because of it.
   artifact?
 
 ## Change ledger
+
+### 2026-07-23 — The answer became a shareable night brief
+
+- Built **The Passage**, a fixed 1080 × 1350 PNG rather than a screenshot of
+  the responsive result page. It turns the decision into a personal cinematic
+  night brief: verdict, exact screening, five truthful itinerary moments,
+  return status, comparison receipt, provenance, and a direct invitation to
+  find another screen.
+- The visual device is an illuminated *Chronospine*: five itinerary nodes are
+  connected to the helmet's vertebral silhouette by stable inline SVG leader
+  lines. The export deliberately avoids WebGL and export-critical SVG filters
+  so the same composition survives browser capture.
+- Made the share model its own privacy boundary. A shared brief, caption, file
+  name and QR contain no origin label, coordinates, directions URL, or route
+  parameters. At most it says the coarse region; a missing or unsafe region
+  falls back to DELHI NCR.
+- The QR is generated locally with `qrcode.react`, points only to the
+  configured public homepage (or the local homepage in development), and has
+  a quiet zone. No external QR API, tracking path or invented destination is
+  involved.
+- Export waits for the helmet image and document fonts, captures at explicit
+  1080 × 1350 canvas dimensions, and has a timeout plus native-share/download
+  fallback. The composer starts with a live scaled preview, then swaps to the
+  actual generated PNG.
+- The QR and PNG renderer live in an on-demand composer chunk, so people who
+  never press Share do not pay the full creative-tooling cost on initial load.
+- Added raw `screenScore`, complete-night cost and return evidence to the
+  recommendation shape. They are source facts for the share receipt and are
+  never reconstructed from weighted ranking dimensions.
 
 ### 2026-07-23 — The result became a briefing for the whole evening
 

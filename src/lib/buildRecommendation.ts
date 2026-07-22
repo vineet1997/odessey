@@ -988,9 +988,13 @@ export async function buildRecommendation(
           priceLabel: `₹${runnerUp.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
           showtime: runnerUp.candidate.show.time,
           score: runnerUp.score,
+          screenScore: runnerUp.candidate.experienceScore,
+          totalCostRupees: runnerUp.score.totalCostRupees,
+          returnEvidence: runnerUp.returnJourney.evidence,
         }
       : undefined,
     score: winner.score,
+    screenScore: winner.candidate.experienceScore,
     counterfactuals: buildCounterfactuals(eligible, winner),
     // Fallback covers the type's null possibility (shouldn't happen for the 15
     // curated venues in practice) — a generic search beats a dead button.

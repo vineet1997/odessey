@@ -151,8 +151,12 @@ export const sampleResult: RecommendationResult = {
     priceLabel: "₹2,500",
     showtime: "4:30 PM",
     score: runnerUpScore,
+    screenScore: runnerUpVenue.experienceScore,
+    totalCostRupees: runnerUpScore.totalCostRupees,
+    returnEvidence: "live",
   },
   score: winnerScore,
+  screenScore: winnerVenue.experienceScore,
   counterfactuals: [
     {
       id: "picture-first",

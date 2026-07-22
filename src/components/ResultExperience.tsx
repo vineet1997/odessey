@@ -1,9 +1,15 @@
-import { ExternalLink, MapPinned } from "lucide-react";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { ExternalLink, MapPinned, Share2 } from "lucide-react";
 import { Dossier } from "./Dossier";
 import type { Origin } from "./helm/types";
 import type { DossierEntry } from "../lib/buildRecommendation";
 import { INTENTS, type IntentId } from "../scoring/score";
 import type { RecommendationResult, ReturnStatus } from "../types/recommendation";
+import { buildShareArtifactModel } from "../lib/shareArtifact";
+
+const ShareComposer = lazy(() =>
+  import("./ShareComposer").then((module) => ({ default: module.ShareComposer }))
+);
 
 type Counterfactual = {
   id?: string;
@@ -46,9 +52,11 @@ export function ResultExperience({
   onSwitchIntent,
   onStartOver,
 }: ResultExperienceProps) {
+  const [shareOpen, setShareOpen] = useState(false);
   const timeline = makeTimeline(result);
   const counterfactuals = makeCounterfactuals(result);
   const returnTone = returnStatusTone(result.journey.return.status);
+  const shareModel = useMemo(() => buildShareArtifactModel(result, origin), [result, origin]);
 
   return (
     <main className="min-h-screen bg-bg pb-28 text-ink lg:pb-0" data-testid="result-experience">
@@ -107,8 +115,9 @@ export function ResultExperience({
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted">The decisive plan</p>
                 <p className="mt-2 font-body text-lg italic leading-relaxed text-ink">A good screening is only good if the entire evening works.</p>
               </div>
-              <div className="flex shrink-0 gap-2" aria-label="Primary actions">
+              <div className="hidden shrink-0 gap-2 md:flex" aria-label="Primary actions">
                 <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
+                <ActionButton onClick={() => setShareOpen(true)} label="Share brief" icon={<Share2 size={14} />} />
                 <ActionLink href={result.districtUrl} variant="primary" label="Book" icon={<ExternalLink size={14} />} />
               </div>
             </div>
@@ -200,11 +209,23 @@ export function ResultExperience({
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 p-3 backdrop-blur md:hidden" aria-label="Primary actions">
-        <div className="mx-auto grid max-w-[560px] grid-cols-2 gap-3">
+        <div className="mx-auto grid max-w-[560px] grid-cols-3 gap-2">
           <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
+          <ActionButton onClick={() => setShareOpen(true)} label="Share" icon={<Share2 size={14} />} />
           <ActionLink href={result.districtUrl} variant="primary" label="Book on District" icon={<ExternalLink size={14} />} />
         </div>
       </div>
+      {shareOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 backdrop-blur-sm" role="status">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">Preparing the share studio</p>
+            </div>
+          }
+        >
+          <ShareComposer model={shareModel} onClose={() => setShareOpen(false)} />
+        </Suspense>
+      )}
     </main>
   );
 }
@@ -384,6 +405,19 @@ function ActionLink({ href, label, icon, variant }: { href: string; label: strin
       {label}
       {icon}
     </a>
+  );
+}
+
+function ActionButton({ onClick, label, icon }: { onClick: () => void; label: string; icon: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-11 items-center justify-center gap-2 border border-border bg-bg-raised px-4 font-mono text-[10px] uppercase tracking-[0.12em] text-ink transition-colors hover:border-gold/70 hover:text-gold-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+    >
+      {label}
+      {icon}
+    </button>
   );
 }
 

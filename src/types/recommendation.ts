@@ -105,6 +105,10 @@ export interface RunnerUp {
   priceLabel: string;
   showtime: string;
   score: ScoreResult;
+  /** Curated/raw format score, kept separate from the weighted recommendation score. */
+  screenScore: number;
+  totalCostRupees: number;
+  returnEvidence: ReturnEvidenceStatus;
 }
 
 export interface RecommendationResult {
@@ -135,6 +139,8 @@ export interface RecommendationResult {
    * ResultCard renders no runner-up row in that case rather than fabricate one. */
   runnerUp?: RunnerUp;
   score: ScoreResult;
+  /** The selected format's curated screen score. Never infer this from score dimensions. */
+  screenScore: number;
   /** Three alternative answers to deliberately narrower questions, selected
    * only from the same viable, scored show plans. */
   counterfactuals: CounterfactualAlternative[];
