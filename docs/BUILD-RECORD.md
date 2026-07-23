@@ -418,6 +418,20 @@ or artifact, name the trade-off, and close with what changed because of it.
 
 ## Change ledger
 
+### 2026-07-23 — The build record became a public companion piece
+
+- Added the lazy-loaded `/made` route as a focused product-engineering article:
+  problem framing, the plan-scoring model, static-first architecture,
+  believable data failures, evidence hierarchy, responsive art direction, and
+  the specialist-pass workflow. It uses visual artifacts only when they
+  clarify a decision.
+- The public record leads with what the product does and labels its product
+  hypotheses as unproven. It documents decisions and revisions—not invented
+  traction or a retrospective victory lap.
+- Its visual artifacts are sanitised and bounded: no personal origins, route
+  requests, credentials, private transcripts, or raw multi-megabyte generated
+  images are shipped on the normal Ithaka path.
+
 ### 2026-07-23 — Ithaka received its canonical public address
 
 - Set `https://ithaka.vineet.cc/` as the canonical site, Open Graph, Twitter

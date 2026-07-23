@@ -28,7 +28,13 @@ const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min)
  *   full frame rate (which is what makes the springs feel like water
  *   instead of molasses; the constants themselves match the reference).
  */
-export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueField(_props, ref) {
+interface PrologueFieldProps {
+  /** Uses the same spring-tile field inside a bounded figure instead of the
+   * full viewport. The build article uses this for one intentional collage. */
+  contained?: boolean;
+}
+
+export const PrologueField = forwardRef<PrologueFieldHandle, PrologueFieldProps>(function PrologueField({ contained = false }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const apiRef = useRef<{ setProgress(p: number): void } | null>(null);
 
@@ -277,8 +283,9 @@ export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueFi
     };
 
     const setSize = () => {
-      state.width = window.innerWidth;
-      state.height = window.innerHeight;
+      const bounds = contained ? canvas.parentElement?.getBoundingClientRect() : undefined;
+      state.width = Math.round(bounds?.width ?? window.innerWidth);
+      state.height = Math.round(bounds?.height ?? window.innerHeight);
       state.dpr = mobile ? 1 : clamp(window.devicePixelRatio || 1, 1, 2);
       canvas.width = Math.round(state.width * state.dpr);
       canvas.height = Math.round(state.height * state.dpr);
@@ -291,8 +298,9 @@ export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueFi
 
     const updatePointer = (e: PointerEvent) => {
       if (e.isPrimary === false) return;
-      const x = e.clientX;
-      const y = e.clientY;
+      const bounds = contained ? canvas.parentElement?.getBoundingClientRect() : undefined;
+      const x = e.clientX - (bounds?.left ?? 0);
+      const y = e.clientY - (bounds?.top ?? 0);
       if (!pointer.active) {
         pointer.lastX = x;
         pointer.lastY = y;
@@ -351,9 +359,9 @@ export const PrologueField = forwardRef<PrologueFieldHandle>(function PrologueFi
       window.removeEventListener("blur", clearPointer);
       if (state.raf) window.cancelAnimationFrame(state.raf);
     };
-  }, []);
+  }, [contained]);
 
-  return <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none fixed inset-0 z-0" />;
+  return <canvas ref={canvasRef} aria-hidden="true" className={contained ? "pointer-events-none absolute inset-0 z-0 h-full w-full" : "pointer-events-none fixed inset-0 z-0"} />;
 });
 
 export default PrologueField;

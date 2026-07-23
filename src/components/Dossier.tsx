@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, RotateCcw } from "lucide-react";
+import { ArrowUpRight, ChevronDown, RotateCcw } from "lucide-react";
 import type { DossierEntry } from "../lib/buildRecommendation";
 import type { Origin } from "./helm/types";
 import type { RecommendationResult } from "../types/recommendation";
@@ -143,6 +143,21 @@ function ResearchReceipt({
         <ReceiptCell index={2} label="Transit checks" value={String(result.provenance.transitPlansChecked)} />
         <ReceiptCell index={3} label="District snapshot" value={result.freshnessLabel.replace("AS OF ", "")} />
       </dl>
+      <a
+        href="/made"
+        className="group mt-6 block border border-gold/35 bg-[linear-gradient(110deg,rgba(207,165,76,0.09),rgba(14,17,22,0.2)_42%,rgba(68,113,107,0.12))] p-5 transition-colors hover:border-gold/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70"
+        aria-label="Read how Ithaka was built"
+      >
+        <div className="flex items-start justify-between gap-5">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">Builder&apos;s log · optional reading</p>
+            <p className="mt-2 font-display text-xl text-ink sm:text-2xl">The system behind tonight&apos;s answer</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">How live showtimes, route evidence, visual craft, and a few wrong turns became Ithaka.</p>
+          </div>
+          <ArrowUpRight className="mt-1 size-5 shrink-0 text-gold-bright transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+        </div>
+        <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-gold-bright/90">Read the build note · 8 min</p>
+      </a>
       <div className="mt-5 flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className={`font-mono text-[9px] uppercase leading-relaxed tracking-[0.08em] ${result.provenance.routeSource === "live" ? "text-sea-bright" : "text-ink-muted"}`}>
           {routeState} · {result.provenance.venuesChecked} venues compared

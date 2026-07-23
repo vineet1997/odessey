@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Analytics } from "@vercel/analytics/react";
 import { Prologue } from "./components/Prologue";
@@ -10,9 +10,14 @@ import type { HelmAnswers } from "./components/helm/types";
 import type { RecommendationResult } from "./types/recommendation";
 import type { DossierEntry } from "./lib/buildRecommendation";
 
+const MadePage = lazy(() => import("./components/MadePage").then((module) => ({ default: module.MadePage })));
+
 type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
 function App() {
+  if (window.location.pathname === "/made") {
+    return <Suspense fallback={<div className="grid min-h-screen place-items-center bg-bg font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">Opening the build record</div>}><MadePage /></Suspense>;
+  }
   const [stage, setStage] = useState<Stage>(() =>
     // sessionStorage, not localStorage: clears per browser tab/session, so a
     // fresh visit later replays the Prologue instead of skipping it forever
