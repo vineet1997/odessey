@@ -48,6 +48,7 @@ import type {
   EveningTimeline,
   RecommendationEvidence,
   RecommendationResult,
+  PlanTimingBand,
   ReturnFallbackReason,
   ReturnEvidenceStatus,
 } from "../types/recommendation";
@@ -57,6 +58,10 @@ const THEATRE_EXIT_BUFFER_MINUTES = 15;
 const TRANSIT_FINALIST_LIMIT = 12;
 const TRANSIT_FARE_FALLBACK_RUPEES = 60;
 export const MAX_METRO_DEPARTURE_DELAY_MINUTES = 45;
+const OUTSIDE_DEFAULT_EARLIEST_LEAVE_MINUTES = 7 * 60;
+const EDGE_DEFAULT_EARLIEST_LEAVE_MINUTES = 9 * 60;
+const EDGE_DEFAULT_EARLIEST_SHOW_MINUTES = 10 * 60;
+const EDGE_DEFAULT_LATEST_SHOW_MINUTES = 23 * 60;
 
 // Uncalibrated placeholder — see module doc comment #1.
 const CAB_BASE_FARE_RUPEES = 60;
@@ -365,7 +370,7 @@ async function fetchTransitHome(
         metroDeparture: data.transit.departureTime,
         maxWaitMinutes: MAX_METRO_DEPARTURE_DELAY_MINUTES,
       });
-      return cabFallbackFor("no-route", "metro-too-late");
+      return cabFallbackFor("no-route", "metro-closed-for-night");
     }
 
     return {
@@ -465,6 +470,34 @@ export function viableShowsForRoute(
   if (when !== "tonight") return shows;
   const cutoff = nowMinutesOfDay + routeDurationMinutes + MAKEABLE_ROUTE_BUFFER_MINUTES;
   return shows.filter((show) => parseTimeToMinutes(show.time) >= cutoff);
+}
+
+/** The app has no explicit time preference yet, so it uses a conservative
+ * default: a recommendation should not ask someone to leave before sunrise
+ * merely because that screening is cheap. These bands affect selection only;
+ * every scored plan remains visible in research. */
+export function timingBandForShow(
+  show: Pick<Show, "time">,
+  outboundDurationMinutes: number
+): PlanTimingBand {
+  const showStartMinutes = parseTimeToMinutes(show.time);
+  const leaveHomeMinutes = showStartMinutes - outboundDurationMinutes - MAKEABLE_ROUTE_BUFFER_MINUTES;
+
+  if (leaveHomeMinutes < OUTSIDE_DEFAULT_EARLIEST_LEAVE_MINUTES) return "outside-default";
+  if (
+    leaveHomeMinutes < EDGE_DEFAULT_EARLIEST_LEAVE_MINUTES ||
+    showStartMinutes < EDGE_DEFAULT_EARLIEST_SHOW_MINUTES ||
+    showStartMinutes >= EDGE_DEFAULT_LATEST_SHOW_MINUTES
+  ) {
+    return "edge";
+  }
+  return "normal";
+}
+
+function timingFallbackNotice(band: PlanTimingBand): string | undefined {
+  if (band === "edge") return "No normal-hours plan made the cut. This is the least unusual option.";
+  if (band === "outside-default") return "Only before- or after-hours plans made the cut.";
+  return undefined;
 }
 
 function compareShowsChronologically(a: Show, b: Show): number {
@@ -629,10 +662,10 @@ function buildJourneyLegs(scored: Scored) {
   const returnHeadline = isLive
     ? `Metro home: ${formatTransitTime(returnJourney.departureTime!)} from ${returnJourney.departureStop}.`
     : isNoRoute
-      ? returnJourney.fallbackReason === "metro-too-late"
-        ? `Metro does not run soon enough after the ${showEnd} finish.`
-        : `No metro route after the ${showEnd} finish.`
-      : `Metro after the ${showEnd} finish could not be verified.`;
+      ? returnJourney.fallbackReason === "metro-closed-for-night"
+        ? "Metro has stopped for the night."
+        : "No metro-only connection home from this venue."
+      : "Metro connection home could not be verified.";
 
   const returnLeg = {
     lineLabel: isLive ? returnJourney.lineName! : "CAB",
@@ -886,6 +919,24 @@ export async function buildRecommendation(
     return { ok: false, reason: "Couldn't reach live travel times for any matching venue just now. Try again." };
   }
 
+  // The default answer should be a normal moviegoing plan, not merely the
+  // cheapest technically bookable show. Early/late plans stay in `scored`
+  // for the research surface, but only enter the recommendation pool when no
+  // more reasonable band exists.
+  const timingByJourney = new Map<string, PlanTimingBand>();
+  const nonFourDxCandidates = finalCandidates.filter((candidate) => !isFourDxFormat(candidate.format));
+  for (const candidate of nonFourDxCandidates) {
+    timingByJourney.set(
+      journeyKeyOf(candidate),
+      timingBandForShow(candidate.show, candidate.route.durationMinutes)
+    );
+  }
+  const recommendationTimingBand: PlanTimingBand = [...timingByJourney.values()].includes("normal")
+    ? "normal"
+    : [...timingByJourney.values()].includes("edge")
+      ? "edge"
+      : "outside-default";
+
   // --- Score every viable show plan with a conservative cab-home fallback.
   //     Then spend live transit calls only on the plans with the strongest
   //     possible score if public transport is available. No show is removed
@@ -911,6 +962,7 @@ export async function buildRecommendation(
   const finalistPotential = new Map<string, { candidate: FinalCandidate; optimisticScore: number }>();
   for (const fallback of fallbackScored) {
     if (isFourDxFormat(fallback.candidate.format)) continue;
+    if (timingByJourney.get(journeyKeyOf(fallback.candidate)) !== recommendationTimingBand) continue;
     const optimistic = scoreCandidateWithReturn(
       fallback.candidate,
       {
@@ -960,15 +1012,21 @@ export async function buildRecommendation(
   if (eligible.length === 0) {
     return { ok: false, reason: "Only 4DX showtimes turned up for this window — try a different one." };
   }
-  eligible.sort((a, b) => b.score.totalScore - a.score.totalScore);
+  const recommendationPool = eligible.filter(
+    (candidate) => timingByJourney.get(journeyKeyOf(candidate.candidate)) === recommendationTimingBand
+  );
+  if (recommendationPool.length === 0) {
+    return { ok: false, reason: "No normal-hours plan could be assembled for this window. Try another day." };
+  }
+  recommendationPool.sort((a, b) => b.score.totalScore - a.score.totalScore);
 
-  const winner = eligible[0];
-  const runnerUp = eligible.find((s) => s.candidate.venue.id !== winner.candidate.venue.id);
+  const winner = recommendationPool[0];
+  const runnerUp = recommendationPool.find((s) => s.candidate.venue.id !== winner.candidate.venue.id);
 
   // --- valueComparison: Worth Every Rupee only, same venue, meaningfully different format ---
   let valueComparison: RecommendationResult["valueComparison"];
   if (intentId === "worth-every-rupee") {
-    const sameVenueOthers = eligible.filter(
+    const sameVenueOthers = recommendationPool.filter(
       (s) =>
         s.candidate.venue.id === winner.candidate.venue.id &&
         s.candidate.format !== winner.candidate.format &&
@@ -1024,7 +1082,7 @@ export async function buildRecommendation(
     narrativePlanOf(winner),
     runnerUp ? narrativePlanOf(runnerUp) : undefined,
     intentWeights,
-    new Set(eligible.map((candidate) => candidate.candidate.venue.id)).size
+    new Set(recommendationPool.map((candidate) => candidate.candidate.venue.id)).size
   );
 
   const result: RecommendationResult = {
@@ -1037,6 +1095,12 @@ export async function buildRecommendation(
     dateLabel: formatDateLabel(winner.candidate.show.date),
     seatClass: winner.candidate.show.cheapestSeatClassLabel ?? "SEATS",
     priceLabel: `₹${winner.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
+    timing: {
+      band: recommendationTimingBand,
+      ...(timingFallbackNotice(recommendationTimingBand)
+        ? { notice: timingFallbackNotice(recommendationTimingBand) }
+        : {}),
+    },
     journey: {
       outbound,
       return: returnLeg,
@@ -1062,7 +1126,7 @@ export async function buildRecommendation(
     score: winner.score,
     screenScore: winner.candidate.experienceScore,
     screenProof: getScreenProof(winner.candidate.venue.id, winner.candidate.format),
-    counterfactuals: buildCounterfactuals(eligible, winner),
+    counterfactuals: buildCounterfactuals(recommendationPool, winner),
     // Fallback covers the type's null possibility (shouldn't happen for the 15
     // curated venues in practice) — a generic search beats a dead button.
     districtUrl: winner.candidate.districtUrl ?? "https://www.district.in/movies/the-odyssey-movie-tickets-in-delhi-ncr-MV187151",

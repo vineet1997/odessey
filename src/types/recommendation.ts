@@ -9,7 +9,8 @@ import type { RecommendationNarrative, NarrativeValueComparison } from "../lib/r
 
 export type ReturnStatus = "good" | "stranded" | "unverified";
 export type ReturnEvidenceStatus = "live" | "no-route" | "unverified";
-export type ReturnFallbackReason = "no-metro-route" | "metro-too-late" | "lookup-unavailable";
+export type ReturnFallbackReason = "no-metro-route" | "metro-closed-for-night" | "lookup-unavailable";
+export type PlanTimingBand = "normal" | "edge" | "outside-default";
 export type ProofStatus = "confirmed" | "unavailable" | "unverified";
 
 /** Equipment proof for the exact selected presentation. Unknown evidence
@@ -141,6 +142,11 @@ export interface RecommendationResult {
   dateLabel: string; // "MON JUL 20"
   seatClass: string; // "CLASSIC"
   priceLabel: string; // "₹1,100"
+  /** The selected plan's fit with the default, no-preferences-given moviegoing window. */
+  timing: {
+    band: PlanTimingBand;
+    notice?: string;
+  };
   journey: {
     outbound: JourneyLeg;
     return: ReturnLeg;

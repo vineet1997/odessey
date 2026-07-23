@@ -213,9 +213,9 @@ describe("return-state copy", () => {
     const unverified = buildReturnCopy(leg({ status: "unverified", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
     expect(noRoute).toMatchObject({
       heading: "CAB HOME",
-      checkedValue: "NO METRO ROUTE",
+      checkedValue: "NO METRO-ONLY CONNECTION HOME",
     });
-    expect(noRoute.detail).toContain("NO METRO ROUTE AFTER 9:37 PM");
+    expect(noRoute.detail).toContain("NO METRO-ONLY CONNECTION HOME");
     expect(unverified).toMatchObject({
       heading: "CAB ESTIMATE",
       checkedValue: "METRO NOT VERIFIED",
@@ -230,6 +230,15 @@ describe("return-state copy", () => {
     );
     expect(copy.detail).toContain("CAB PRICE UNAVAILABLE");
     expect(copy.detail).not.toMatch(/₹0|undefined|NaN/);
+  });
+
+  it("calls an overnight service gap what it is", () => {
+    const copy = buildReturnCopy(
+      leg({ status: "stranded", fallbackReason: "metro-closed-for-night", costRupees: 420 }),
+      "2:37 AM"
+    );
+    expect(copy.checkedValue).toBe("METRO HAS STOPPED FOR THE NIGHT");
+    expect(copy.detail).not.toContain("after 2:37 AM");
   });
 
   it("does not claim first-transit detail when live fields are incomplete", () => {

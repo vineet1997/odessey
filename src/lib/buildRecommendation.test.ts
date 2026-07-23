@@ -8,6 +8,7 @@ import {
   isTimelyMetroDeparture,
   isoDateOf,
   resolveExperienceScore,
+  timingBandForShow,
   viableShowsForRoute,
   type Show,
 } from "./buildRecommendation";
@@ -72,6 +73,24 @@ describe("isTimelyMetroDeparture", () => {
     // 2:37 AM IST exit, 8:05 AM IST first service: technically routable,
     // but not a reasonable metro journey home.
     expect(isTimelyMetroDeparture("2026-07-22T21:07:00.000Z", "2026-07-23T02:35:00.000Z")).toBe(false);
+  });
+});
+
+describe("timingBandForShow", () => {
+  it("keeps a before-sunrise departure out of the default recommendation pool", () => {
+    expect(timingBandForShow(show({ time: "6:30 AM" }), 35)).toBe("outside-default");
+  });
+
+  it("treats a morning departure as an edge case rather than the default answer", () => {
+    expect(timingBandForShow(show({ time: "9:30 AM" }), 20)).toBe("edge");
+  });
+
+  it("accepts an ordinary late-morning screening as a normal plan", () => {
+    expect(timingBandForShow(show({ time: "11:00 AM" }), 35)).toBe("normal");
+  });
+
+  it("marks an 11 PM start as an edge case even for a nearby venue", () => {
+    expect(timingBandForShow(show({ time: "11:00 PM" }), 10)).toBe("edge");
   });
 });
 

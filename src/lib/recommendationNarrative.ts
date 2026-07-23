@@ -59,7 +59,7 @@ function formatReturnTime(iso: string): string {
 /** Copy for the source-bounded first transit fact. A live result is not
  * described as a complete route because the API currently retains one
  * scheduled transit step, not every leg and transfer. */
-export function buildReturnCopy(leg: ReturnLeg, theatreExitTime: string): ReturnCopy {
+export function buildReturnCopy(leg: ReturnLeg, _theatreExitTime: string): ReturnCopy {
   const hasFirstTransit = Boolean(leg.departureTime && leg.departureStop && leg.lineLabel);
   const hasCabEstimate = leg.cabEstimateAvailable !== false && Number.isFinite(leg.costRupees) && leg.costRupees > 0;
   if (leg.status === "good" && hasFirstTransit) {
@@ -72,12 +72,14 @@ export function buildReturnCopy(leg: ReturnLeg, theatreExitTime: string): Return
     };
   }
   if (leg.status === "stranded") {
-    const metroState = leg.fallbackReason === "metro-too-late" ? "METRO DOES NOT RUN SOON ENOUGH" : "NO METRO ROUTE";
+    const metroState = leg.fallbackReason === "metro-closed-for-night"
+      ? "METRO HAS STOPPED FOR THE NIGHT"
+      : "NO METRO-ONLY CONNECTION HOME";
     return {
       heading: "CAB HOME",
       detail: hasCabEstimate
-        ? `${metroState} AFTER ${theatreExitTime.toUpperCase()} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`
-        : `${metroState} AFTER ${theatreExitTime.toUpperCase()} · CAB PRICE UNAVAILABLE`,
+        ? `${metroState} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`
+        : `${metroState} · CAB PRICE UNAVAILABLE`,
       checkedValue: metroState,
     };
   }

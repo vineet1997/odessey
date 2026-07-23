@@ -92,6 +92,7 @@ export const sampleResult: RecommendationResult = {
   dateLabel: "MON JUL 20",
   seatClass: "CLASSIC",
   priceLabel: "₹1,100",
+  timing: { band: "normal" },
   journey: {
     outbound: {
       lineLabel: "YELLOW LINE",

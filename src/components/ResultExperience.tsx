@@ -110,6 +110,11 @@ export function ResultExperience({
 
             <section aria-labelledby="evening-heading" className="border-t border-border py-7 sm:py-8" data-testid="evening-timeline">
               <p id="evening-heading" className="mb-7 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Proposed plan</p>
+              {result.timing.notice && (
+                <p className="-mt-3 mb-6 max-w-[42rem] font-body text-[14px] italic leading-relaxed text-ink-muted">
+                  {result.timing.notice}
+                </p>
+              )}
               <ol className="relative grid gap-0 before:absolute before:bottom-[1.2rem] before:left-[0.3rem] before:top-[1.05rem] before:w-px before:bg-border sm:grid-cols-5 sm:before:bottom-auto sm:before:left-[10%] sm:before:right-[10%] sm:before:h-px sm:before:w-auto">
                 <TimelineStop time={timeline.leaveHome} label="Leave home" />
                 <TimelineStop time={timeline.arriveVenue} label="At the theatre" />
