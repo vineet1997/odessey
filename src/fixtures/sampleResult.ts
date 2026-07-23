@@ -106,6 +106,9 @@ export const sampleResult: RecommendationResult = {
       durationMinutes: winnerContext.returnDurationMinutes,
       costRupees: winnerContext.returnTransportCostRupees,
       headline: "THE 11:32 PM LAST TRAIN FROM MALVIYA NAGAR GETS YOU HOME",
+      departureTime: "2026-07-20T18:02:00.000Z",
+      departureStop: "Malviya Nagar",
+      vehicleType: "SUBWAY",
     },
     totalCostRupees: winnerScore.totalCostRupees,
   },
@@ -138,7 +141,7 @@ export const sampleResult: RecommendationResult = {
       caveat: "Laser status is unverified.",
     },
     outcome: {
-      lead: "Lower complete-night cost than PVR Priya.",
+      lead: "₹1,620 LESS DOOR TO DOOR VS PVR PRIYA",
       receipt: "Screen 93/100 vs 96/100 · ₹1,180 vs ₹2,800 door to door · 35 vs 40 min outbound · return: scheduled transit found vs scheduled transit found.",
     },
   },
@@ -157,6 +160,11 @@ export const sampleResult: RecommendationResult = {
   },
   score: winnerScore,
   screenScore: winnerVenue.experienceScore,
+  screenProof: {
+    imax: "confirmed",
+    laser: "unverified",
+    seventyMm: "unverified",
+  },
   counterfactuals: [
     {
       id: "picture-first",

@@ -4,12 +4,16 @@
  * screen size, or seating type from a substring match.
  */
 
+import type { ProofStatus, ScreenProof } from "../types/recommendation";
+
 export type FormatFamily = "imax" | "large-format" | "premium-seating" | "standard" | "motion";
 export type FormatEmphasis = "picture" | "comfort" | "balanced" | "motion" | "unknown";
 
 export interface FormatProfile {
   family: FormatFamily;
   emphasis: FormatEmphasis;
+  /** True only when this exact District label explicitly establishes laser. */
+  laserConfirmed?: true;
   /** A claim supported by the exact District format label, not a venue rumour. */
   safeDescription: string;
   /** A useful limit on what the label proves. */
@@ -32,15 +36,15 @@ export const FORMAT_PROFILES: Record<string, FormatProfile> = {
     safeDescription: "Listed as an IMAX 2D presentation.",
     caveat: "The IMAX label alone does not establish laser projection.",
   },
-  "IMAX 2D (Laser)": { family: "imax", emphasis: "picture", safeDescription: "Listed as an IMAX 2D (Laser) presentation." },
+  "IMAX 2D (Laser)": { family: "imax", emphasis: "picture", laserConfirmed: true, safeDescription: "Listed as an IMAX 2D (Laser) presentation." },
   "INSIGNIA 2D": { family: "premium-seating", emphasis: "comfort", safeDescription: "Listed as an Insignia presentation." },
-  "LASER 2D": { family: "large-format", emphasis: "picture", safeDescription: "Listed as a laser 2D presentation." },
-  "LASER DOLBY 2D": { family: "large-format", emphasis: "picture", safeDescription: "Listed as a laser Dolby presentation." },
-  "LASER DOLBY ATMOS 2D": { family: "large-format", emphasis: "picture", safeDescription: "Listed as a laser Dolby Atmos presentation." },
+  "LASER 2D": { family: "large-format", emphasis: "picture", laserConfirmed: true, safeDescription: "Listed as a laser 2D presentation." },
+  "LASER DOLBY 2D": { family: "large-format", emphasis: "picture", laserConfirmed: true, safeDescription: "Listed as a laser Dolby presentation." },
+  "LASER DOLBY ATMOS 2D": { family: "large-format", emphasis: "picture", laserConfirmed: true, safeDescription: "Listed as a laser Dolby Atmos presentation." },
   "LUXE 2D": { family: "premium-seating", emphasis: "comfort", safeDescription: "Listed as a LUXE seating presentation." },
   "ONYX 2D": { family: "large-format", emphasis: "picture", safeDescription: "Listed as an ONYX presentation." },
   "PXL 2D": { family: "large-format", emphasis: "picture", safeDescription: "Listed as a PXL presentation." },
-  "RECLINER LASER ATMOS 2D": { family: "premium-seating", emphasis: "comfort", safeDescription: "Listed as a recliner laser Atmos presentation." },
+  "RECLINER LASER ATMOS 2D": { family: "premium-seating", emphasis: "comfort", laserConfirmed: true, safeDescription: "Listed as a recliner laser Atmos presentation." },
   "RECLINERS 2D": { family: "premium-seating", emphasis: "comfort", safeDescription: "Listed as a recliner seating presentation." },
 };
 
@@ -49,6 +53,8 @@ export interface VenueFormatEditorial {
   judgment: string;
   /** A factual qualification that must travel with the judgement. */
   caveat?: string;
+  /** Venue-specific facts must be tied to this exact presentation label. */
+  proof?: Partial<Record<keyof ScreenProof, Exclude<ProofStatus, "unverified">>>;
 }
 
 /**
@@ -60,10 +66,12 @@ export const VENUE_FORMAT_EDITORIALS: Record<string, VenueFormatEditorial> = {
   "priya-vasant-vihar|IMAX 2D": {
     judgment: "Directly confirmed laser IMAX in our NCR shortlist.",
     caveat: "The confirmation is venue-specific, not an inference from the IMAX label.",
+    proof: { laser: "confirmed" },
   },
   "priya-vasant-vihar|IMAX 2D (Laser)": {
     judgment: "Directly confirmed laser IMAX in our NCR shortlist.",
     caveat: "The confirmation is venue-specific, not an inference from the IMAX label.",
+    proof: { laser: "confirmed" },
   },
   "select-citywalk-saket|IMAX 2D": {
     judgment: "High-rated IMAX in our NCR shortlist.",
@@ -101,6 +109,18 @@ export function getFormatProfile(format: string): FormatProfile | undefined {
 
 export function getVenueFormatEditorial(venueId: string, format: string): VenueFormatEditorial | undefined {
   return VENUE_FORMAT_EDITORIALS[`${venueId}|${format}`];
+}
+
+/** Builds proof for one selected presentation. Absence of evidence always
+ * remains `unverified`; only exact format/venue records can establish facts. */
+export function getScreenProof(venueId: string, format: string): ScreenProof {
+  const profile = getFormatProfile(format);
+  const venueProof = getVenueFormatEditorial(venueId, format)?.proof;
+  return {
+    imax: venueProof?.imax ?? (profile ? (profile.family === "imax" ? "confirmed" : "unavailable") : "unverified"),
+    laser: venueProof?.laser ?? (profile?.laserConfirmed ? "confirmed" : "unverified"),
+    seventyMm: venueProof?.seventyMm ?? "unverified",
+  };
 }
 
 /** Data-level guard for tests and future scraper labels. */

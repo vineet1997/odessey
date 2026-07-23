@@ -40,6 +40,7 @@ import venuesData from "../../data/venues-curated.json";
 import showtimesData from "../../data/showtimes-live.json";
 import { scoreVenue, INTENTS, type IntentId, type ScoreResult, type UserContext } from "../scoring/score";
 import { buildRecommendationNarrative, buildValueComparison, type NarrativePlan } from "./recommendationNarrative";
+import { getScreenProof } from "./formatProfiles";
 import type { Origin, WhenChoice } from "../components/helm/types";
 import type {
   CounterfactualAlternative,
@@ -596,6 +597,9 @@ function buildJourneyLegs(scored: Scored) {
           evidenceLabel: `${returnJourney.lineName}${
             returnJourney.vehicleType ? ` · ${returnJourney.vehicleType.replaceAll("_", " ")}` : ""
           } · SHOW ENDS ~${showEnd}`,
+          departureTime: returnJourney.departureTime,
+          departureStop: returnJourney.departureStop,
+          vehicleType: returnJourney.vehicleType,
         }
       : { cabFallbackLabel: `Cab back ≈ ₹${scored.cabFare}` }),
   };
@@ -661,14 +665,14 @@ function counterfactualOf(
       ? {
           label: "IF PICTURE CAME FIRST",
           question: "What if the screen mattered more than every other trade-off?",
-          metric: { label: "PICTURE SCORE", value: `${selected.candidate.experienceScore}/100` },
+          metric: { label: "SCREEN SCORE", value: `${selected.candidate.experienceScore}/100` },
         }
       : id === "price-first"
         ? {
             label: "IF PRICE CAME FIRST",
             question: "What if the lowest complete-night cost was the only priority?",
             metric: {
-              label: "DOOR TO DOOR",
+              label: "TOTAL",
               value: `₹${selected.score.costPerPersonRupees.toLocaleString("en-IN")}`,
             },
           }
@@ -995,6 +999,7 @@ export async function buildRecommendation(
       : undefined,
     score: winner.score,
     screenScore: winner.candidate.experienceScore,
+    screenProof: getScreenProof(winner.candidate.venue.id, winner.candidate.format),
     counterfactuals: buildCounterfactuals(eligible, winner),
     // Fallback covers the type's null possibility (shouldn't happen for the 15
     // curated venues in practice) — a generic search beats a dead button.

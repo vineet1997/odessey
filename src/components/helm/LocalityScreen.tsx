@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Loader2, LocateFixed, Search } from "lucide-react";
+import { ArrowRight, Loader2, LocateFixed, Search } from "lucide-react";
 import { LOCALITIES, REGIONS } from "../../fixtures/localities";
 import type { Origin } from "./types";
 
@@ -8,6 +8,13 @@ interface LocalityScreenProps {
 }
 
 const GEOLOCATION_TIMEOUT_MS = 8000;
+const DEMO_LOCALITY = LOCALITIES.find((locality) => locality.name === "Vasant Vihar")!;
+
+// This is deliberately generous: it prevents someone in another city from
+// spending route calls on a Delhi-only release, without rejecting NCR edges.
+function isWithinDelhiNcr({ lat, lng }: Pick<Origin, "lat" | "lng">): boolean {
+  return lat >= 27.7 && lat <= 29.2 && lng >= 76.5 && lng <= 78;
+}
 
 /**
  * Screen 1 — "Where's home?" DESIGN.md: "Locality picker: full-height
@@ -21,6 +28,8 @@ export function LocalityScreen({ onSelect }: LocalityScreenProps) {
   const [query, setQuery] = useState("");
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState(false);
+  const [outsideOrigin, setOutsideOrigin] = useState<Origin | null>(null);
+  const [oarAdded, setOarAdded] = useState(false);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -45,17 +54,70 @@ export function LocalityScreen({ onSelect }: LocalityScreenProps) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
-        onSelect({
+        const origin = {
           label: "Your location",
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        });
+        };
+        if (!isWithinDelhiNcr(origin)) {
+          setOutsideOrigin(origin);
+          return;
+        }
+        onSelect(origin);
       },
       () => {
         setLocating(false);
         setLocationError(true);
       },
       { enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT_MS }
+    );
+  }
+
+  function chooseDemoLocality() {
+    onSelect({
+      label: DEMO_LOCALITY.name,
+      lat: DEMO_LOCALITY.lat,
+      lng: DEMO_LOCALITY.lng,
+      region: DEMO_LOCALITY.region,
+    });
+  }
+
+  if (outsideOrigin) {
+    return (
+      <section className="flex h-full flex-1 flex-col justify-center" aria-labelledby="beyond-map-heading">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold-bright">Beyond the map</p>
+        <h1 id="beyond-map-heading" className="mt-4 max-w-[15ch] font-display text-[clamp(2.2rem,7vw,3.4rem)] leading-[0.96] text-ink">
+          This shore is beyond Ithaka, for now.
+        </h1>
+        <p className="mt-5 max-w-[34rem] font-body text-[1.05rem] leading-relaxed text-ink-muted">
+          The first voyage covers Delhi NCR. Add an oar for your city, or see how the compass works from {DEMO_LOCALITY.name}.
+        </p>
+        <div className="mt-8 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => setOarAdded(true)}
+            disabled={oarAdded}
+            className="flex min-h-12 w-full items-center justify-center gap-2 border border-gold px-4 font-mono text-[11px] uppercase tracking-[0.14em] text-gold-bright transition-colors hover:bg-gold/10 disabled:cursor-default disabled:border-sea-bright disabled:text-sea-bright"
+          >
+            {oarAdded ? "Your oar is in" : "+1 add my oar"}
+          </button>
+          <button
+            type="button"
+            onClick={chooseDemoLocality}
+            className="flex min-h-12 w-full items-center justify-center gap-2 border border-border px-4 font-mono text-[11px] uppercase tracking-[0.14em] text-ink transition-colors hover:border-ink/35 hover:bg-bg-raised"
+          >
+            Explore from {DEMO_LOCALITY.name}
+            <ArrowRight size={15} strokeWidth={1.5} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOutsideOrigin(null)}
+            className="self-center pt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted transition-colors hover:text-ink"
+          >
+            Choose a Delhi NCR locality
+          </button>
+        </div>
+      </section>
     );
   }
 

@@ -9,6 +9,15 @@ import type { RecommendationNarrative, NarrativeValueComparison } from "../lib/r
 
 export type ReturnStatus = "good" | "stranded" | "unverified";
 export type ReturnEvidenceStatus = "live" | "no-route" | "unverified";
+export type ProofStatus = "confirmed" | "unavailable" | "unverified";
+
+/** Equipment proof for the exact selected presentation. Unknown evidence
+ * remains `unverified`; it must never be rendered as a negative claim. */
+export interface ScreenProof {
+  imax: ProofStatus;
+  laser: ProofStatus;
+  seventyMm: ProofStatus;
+}
 
 /** A clock event in the user-facing, complete-evening itinerary. `dayOffset`
  * prevents a 12:20 AM arrival from looking as though it happens before a
@@ -96,6 +105,11 @@ export interface ReturnLeg extends JourneyLeg {
   /** Only present when status === "stranded" — the cab fallback range. */
   cabFallbackLabel?: string;
   evidenceLabel?: string;
+  /** Structured facts for the first scheduled transit step returned by
+   * Google. These do not describe a complete multi-leg itinerary. */
+  departureTime?: string;
+  departureStop?: string;
+  vehicleType?: string;
 }
 
 export interface RunnerUp {
@@ -141,6 +155,8 @@ export interface RecommendationResult {
   score: ScoreResult;
   /** The selected format's curated screen score. Never infer this from score dimensions. */
   screenScore: number;
+  /** Source-bounded format/equipment status for the exact selected show. */
+  screenProof: ScreenProof;
   /** Three alternative answers to deliberately narrower questions, selected
    * only from the same viable, scored show plans. */
   counterfactuals: CounterfactualAlternative[];

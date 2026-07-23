@@ -1,4 +1,5 @@
 import type { IntentWeights, ScoreResult } from "../scoring/score";
+import type { ReturnLeg } from "../types/recommendation";
 import { getFormatProfile, getVenueFormatEditorial } from "./formatProfiles";
 
 export interface NarrativePlan {
@@ -38,6 +39,56 @@ export interface NarrativeValueComparison {
 export interface RecommendationNarrative {
   selectedFormat: SelectedFormatNarrative;
   outcome: OutcomeNarrative;
+}
+
+export interface ReturnCopy {
+  heading: string;
+  detail: string;
+  checkedValue: string;
+}
+
+function formatReturnTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Kolkata",
+  }).toUpperCase();
+}
+
+/** Copy for the source-bounded first transit fact. A live result is not
+ * described as a complete route because the API currently retains one
+ * scheduled transit step, not every leg and transfer. */
+export function buildReturnCopy(leg: ReturnLeg, theatreExitTime: string): ReturnCopy {
+  const hasFirstTransit = Boolean(leg.departureTime && leg.departureStop && leg.lineLabel);
+  if (leg.status === "good" && hasFirstTransit) {
+    const departure = formatReturnTime(leg.departureTime!);
+    const fare = `₹${leg.costRupees.toLocaleString("en-IN")}${leg.costIsEstimate ? " EST." : ""}`;
+    return {
+      heading: "FIRST TRANSIT",
+      detail: `${leg.lineLabel} · ${leg.departureStop} · ${departure} · ${leg.durationMinutes} MIN · ${fare}`,
+      checkedValue: `FIRST TRANSIT · ${leg.lineLabel} · ${departure}`,
+    };
+  }
+  if (leg.status === "stranded") {
+    return {
+      heading: "CAB HOME",
+      detail: `NO PUBLIC TRANSIT AFTER ${theatreExitTime.toUpperCase()} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`,
+      checkedValue: "NO PUBLIC TRANSIT",
+    };
+  }
+  if (leg.status === "unverified") {
+    return {
+      heading: "CAB ESTIMATE",
+      detail: `TRANSIT NOT VERIFIED · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`,
+      checkedValue: "NOT VERIFIED",
+    };
+  }
+  return {
+    heading: "TRANSIT CHECKED",
+    detail: "TRANSIT CHECKED",
+    checkedValue: "TRANSIT CHECKED",
+  };
 }
 
 function returnReceiptLabel(evidence: NarrativePlan["returnEvidence"]): string {
@@ -90,21 +141,28 @@ export function outcomeNarrative(
 ): OutcomeNarrative {
   if (!runnerUp) {
     return {
-      lead: "One non-4DX venue produced a reachable, priced show in this window.",
+      lead: "ONLY VIABLE VENUE IN THIS WINDOW",
       receipt: `${eligibleVenueCount} eligible venue${eligibleVenueCount === 1 ? "" : "s"} · screen ${winner.experienceScore}/100 · ${formatRupees(winner.totalCostRupees)} door to door · ${winner.outboundDurationMinutes} min outbound · return: ${returnReceiptLabel(winner.returnEvidence)}.`,
     };
   }
 
   const decisive = decisiveDimension(winner, runnerUp, intent);
+  const returnState = (evidence: NarrativePlan["returnEvidence"]): string => {
+    if (evidence === "live") return "TRANSIT CHECKED";
+    if (evidence === "no-route") return "NO PUBLIC TRANSIT";
+    return "NOT VERIFIED";
+  };
   const leadByDimension = {
-    experience: `Stronger screen evidence than ${runnerUp.venueName}.`,
-    cost: `Lower complete-night cost than ${runnerUp.venueName}.`,
-    time: `Shorter outbound trip than ${runnerUp.venueName}.`,
-    feasibility: `More reliable return evidence than ${runnerUp.venueName}.`,
+    experience: `SCREEN +${winner.experienceScore - runnerUp.experienceScore}`,
+    cost: `${formatRupees(runnerUp.totalCostRupees - winner.totalCostRupees)} LESS DOOR TO DOOR`,
+    time: `OUTBOUND ${runnerUp.outboundDurationMinutes - winner.outboundDurationMinutes} MIN SHORTER`,
+    feasibility: `${returnState(winner.returnEvidence)} / ${returnState(runnerUp.returnEvidence)}`,
   } as const;
+  const winnerPlanScore = Math.round(winner.score.totalScore * 100);
+  const runnerPlanScore = Math.round(runnerUp.score.totalScore * 100);
   const lead = decisive.delta > 0.00001
     ? leadByDimension[decisive.dimension]
-    : `Measured trade-offs are nearly tied with ${runnerUp.venueName}.`;
+    : `PLAN SCORE ${winnerPlanScore} / ${runnerPlanScore}`;
   return { lead, receipt: comparisonReceipt(winner, runnerUp) };
 }
 

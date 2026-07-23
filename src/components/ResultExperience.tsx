@@ -3,9 +3,10 @@ import { ExternalLink, MapPinned, Share2 } from "lucide-react";
 import { Dossier } from "./Dossier";
 import type { Origin } from "./helm/types";
 import type { DossierEntry } from "../lib/buildRecommendation";
-import { INTENTS, type IntentId } from "../scoring/score";
-import type { RecommendationResult, ReturnStatus } from "../types/recommendation";
+import type { IntentId } from "../scoring/score";
+import type { ProofStatus, RecommendationResult, ReturnStatus } from "../types/recommendation";
 import { buildShareArtifactModel } from "../lib/shareArtifact";
+import { buildReturnCopy } from "../lib/recommendationNarrative";
 
 const ShareComposer = lazy(() =>
   import("./ShareComposer").then((module) => ({ default: module.ShareComposer }))
@@ -56,160 +57,113 @@ export function ResultExperience({
   const timeline = makeTimeline(result);
   const counterfactuals = makeCounterfactuals(result);
   const returnTone = returnStatusTone(result.journey.return.status);
+  const returnCopy = buildReturnCopy(result.journey.return, result.evening.theatreExit.time);
   const shareModel = useMemo(() => buildShareArtifactModel(result, origin), [result, origin]);
 
   return (
-    <main className="min-h-screen bg-bg pb-28 text-ink lg:pb-0" data-testid="result-experience">
-      <div className="mx-auto grid max-w-[1680px] lg:grid-cols-[minmax(390px,44vw)_minmax(0,1fr)]">
-        <section className="relative overflow-hidden border-b border-border lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+    <main className="result-experience min-h-screen bg-bg pb-32 text-ink md:pb-0" data-testid="result-experience">
+      <div className="mx-auto grid max-w-[1760px] min-[1120px]:grid-cols-[minmax(470px,46%)_minmax(0,1fr)]">
+        <section className="relative h-[64svh] min-h-[520px] max-h-[720px] overflow-hidden border-b border-border min-[1120px]:sticky min-[1120px]:top-0 min-[1120px]:h-screen min-[1120px]:max-h-none min-[1120px]:border-b-0 min-[1120px]:border-r">
           <picture className="absolute inset-0">
-            <source media="(min-width: 1024px)" srcSet="/result-helmet-wide.jpg" />
+            <source media="(min-width: 1120px)" srcSet="/result-helmet-wide.jpg" />
             <img
               src="/result-helmet-tall.jpg"
               alt="A weathered bronze helmet, seen from behind"
-              className="h-full min-h-[420px] w-full object-cover object-[63%_42%] lg:min-h-0 lg:object-[74%_50%]"
+              className="h-full w-full object-cover object-[63%_42%] min-[1120px]:object-[74%_50%]"
             />
           </picture>
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,9,14,0.12)_0%,rgba(5,9,14,0.18)_26%,rgba(5,9,14,0.94)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.10] [background-image:radial-gradient(rgba(233,228,216,0.72)_0.55px,transparent_0.7px)] [background-size:4px_4px]" />
 
-          <div className="relative flex min-h-[420px] flex-col justify-between p-5 sm:p-7 lg:h-full lg:min-h-0 lg:p-10 xl:p-14">
-            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-ink/75">
+          <div className="relative flex h-full flex-col justify-between p-5 sm:p-8 min-[1120px]:p-10 min-[1440px]:p-14">
+            <div className="flex items-center justify-between gap-4 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink/75">
               <span>Ithaka / tonight&rsquo;s answer</span>
               <span>{result.freshnessLabel}</span>
             </div>
 
-            <div className="max-w-[34rem] pt-24 lg:pt-0">
-              <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-gold-bright">{result.intentLabel}</p>
-              <h1 className="max-w-[12ch] font-display text-[clamp(2rem,4vw,4.35rem)] leading-[1.06] text-ink [text-wrap:balance]">
+            <div className="max-w-[35rem] pt-14 min-[1120px]:pt-0">
+              <p className="mb-4 font-mono text-[10.5px] uppercase tracking-[0.18em] text-gold-bright">{result.intentLabel}</p>
+              <h1 className="max-w-[12ch] font-display text-[clamp(2.4rem,4.2vw,4.25rem)] leading-[1.04] text-ink [text-wrap:balance]">
                 {result.venueName}
               </h1>
-              <p className="mt-4 max-w-[32rem] font-body text-[clamp(1.08rem,1.4vw,1.34rem)] italic leading-relaxed text-ink/90">
-                {result.narrative.selectedFormat.judgment}
-              </p>
-              <p className="mt-2 max-w-[32rem] font-mono text-[9px] uppercase leading-relaxed tracking-[0.08em] text-ink/65">
-                {result.narrative.selectedFormat.receipt}
-              </p>
-              {result.narrative.selectedFormat.caveat && (
-                <p className="mt-2 max-w-[32rem] font-mono text-[9px] uppercase leading-relaxed tracking-[0.08em] text-gold-bright/85">
-                  {result.narrative.selectedFormat.caveat}
-                </p>
-              )}
+              <ScreenProofList score={result.screenScore} proof={result.screenProof} />
             </div>
 
-            <div className="mt-9 border-t border-ink/20 pt-4">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-                <Fact label="Screen" value={result.formatChip} />
+            <div className="mt-7 border-t border-ink/20 pt-4">
+              <div className="grid grid-cols-3 gap-x-4 sm:gap-x-8">
                 <Fact label="Showtime" value={result.showtime} />
                 <Fact label="Ticket" value={result.priceLabel} />
-                <Fact label="Home" value={timeline.homeAt} tone={returnTone} />
+                <Fact label={result.evening.homeArrival ? "Home" : "Est. home"} value={timeline.homeAt} tone={returnTone} />
               </div>
             </div>
           </div>
         </section>
 
         <section className="relative min-w-0 bg-bg" aria-label="Recommendation details">
-          <div className="mx-auto max-w-[760px] px-5 py-8 sm:px-8 sm:py-12 lg:px-12 lg:py-14 xl:px-16">
-            <div className="mb-10 flex flex-col gap-5 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted">The decisive plan</p>
-                <p className="mt-2 font-body text-lg italic leading-relaxed text-ink">A good screening is only good if the entire evening works.</p>
-              </div>
-              <div className="hidden shrink-0 gap-2 md:flex" aria-label="Primary actions">
+          <div className="mx-auto w-full max-w-[880px] px-5 py-8 sm:px-8 sm:py-10 min-[1120px]:px-10 min-[1120px]:py-12 min-[1440px]:px-14">
+            <div className="mb-6 hidden justify-end md:flex" aria-label="Primary actions">
+              <div className="flex shrink-0 gap-2">
                 <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
                 <ActionButton onClick={() => setShareOpen(true)} label="Share brief" icon={<Share2 size={14} />} />
                 <ActionLink href={result.districtUrl} variant="primary" label="Book" icon={<ExternalLink size={14} />} />
               </div>
             </div>
 
-            <section aria-labelledby="evening-heading" className="border-y border-border py-6 sm:py-8" data-testid="evening-timeline">
-              <div className="mb-6 flex items-baseline justify-between gap-4">
-                <div>
-                  <p id="evening-heading" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-bright">Your whole evening</p>
-                  <p className="mt-2 font-body text-[1.2rem] italic text-ink">Leave with a plan. Return with one too.</p>
-                </div>
-                <span className={`shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] ${returnTone}`}>
-                  {returnLabel(result.journey.return.status)}
-                </span>
-              </div>
+            <section aria-labelledby="evening-heading" className="border-t border-border py-7 sm:py-8" data-testid="evening-timeline">
+              <p id="evening-heading" className="mb-7 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Proposed plan</p>
               <ol className="relative grid gap-0 before:absolute before:bottom-[1.2rem] before:left-[0.3rem] before:top-[1.05rem] before:w-px before:bg-border sm:grid-cols-5 sm:before:bottom-auto sm:before:left-[10%] sm:before:right-[10%] sm:before:h-px sm:before:w-auto">
                 <TimelineStop time={timeline.leaveHome} label="Leave home" />
                 <TimelineStop time={timeline.arriveVenue} label="At the theatre" />
                 <TimelineStop time={timeline.showStarts} label="Film starts" emphasized />
                 <TimelineStop time={timeline.filmEnds} label="Film ends" />
-                <TimelineStop time={timeline.homeAt} label="Home again" returnTone={returnTone} />
+                <TimelineStop time={timeline.homeAt} label="Home" returnTone={returnTone} />
               </ol>
-              <p className="mt-6 max-w-[48rem] border-l border-gold/60 pl-4 font-body text-[0.96rem] italic leading-relaxed text-ink/90">
-                {result.journey.return.headline}
-                {result.journey.return.cabFallbackLabel ? ` ${result.journey.return.cabFallbackLabel}` : ""}
-              </p>
+              <RouteDecisionModule result={result} heading={returnCopy.heading} detail={returnCopy.detail} />
             </section>
 
-            <section className="py-9 sm:py-12" aria-labelledby="why-heading">
-              <div className="mb-6 flex items-end justify-between gap-4">
-                <div>
-                  <p id="why-heading" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-bright">Why this won</p>
-                  <p className="mt-2 max-w-[40rem] font-body text-[1.16rem] italic leading-relaxed text-ink">{result.narrative.outcome.lead}</p>
-                  <p className="mt-3 max-w-[50rem] font-mono text-[9px] uppercase leading-relaxed tracking-[0.07em] text-ink-muted">{result.narrative.outcome.receipt}</p>
+            <section className="border-t border-border py-9 sm:py-11" aria-labelledby="why-heading">
+              <div className="mb-7 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div className="min-w-0">
+                  <p id="why-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Why this pick</p>
+                  <p className="mt-3 font-mono text-[13px] font-medium uppercase leading-relaxed tracking-[0.06em] text-ink sm:text-[14px]">{result.narrative.outcome.lead}</p>
                 </div>
-                <span className="font-mono text-[11px] text-ink-muted">{Math.round(result.score.totalScore * 100)}/100</span>
+                <div className="shrink-0 sm:text-right">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted">Plan score</p>
+                  <p className="mt-2 font-mono text-[1.65rem] font-medium leading-none tabular-nums text-ink">{Math.round(result.score.totalScore * 100)}/100</p>
+                </div>
               </div>
               <ScoreDimensions result={result} />
             </section>
 
-            <section className="border-t border-border py-9 sm:py-12" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
+            <section className="border-t border-border py-9 sm:py-11" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
               <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-gold-bright">Decision stress test</p>
-                <h2 id="counterfactual-heading" className="mt-2 font-body text-[1.75rem] font-normal leading-[1.12] text-ink sm:text-[1.9rem]">
-                  What would change the answer?
+                <h2 id="counterfactual-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
+                  Change the priority
                 </h2>
-                <p className="mt-2 max-w-[46ch] font-body text-[0.95rem] leading-[1.45] text-ink-muted">
-                  The same viable plans, judged three different ways.
-                </p>
               </div>
               <ol className="mt-6 divide-y divide-border border-y border-border">
                 {counterfactuals.map((item) => (
-                  <CounterfactualEditorialRow key={item.id ?? `${item.title}-${item.venueName}`} item={item} />
+                  <CounterfactualEditorialRow
+                    key={item.id ?? `${item.title}-${item.venueName}`}
+                    item={item}
+                    active={intentForCounterfactual(item.id) === activeIntent}
+                    onSelect={() => {
+                      const intent = intentForCounterfactual(item.id);
+                      if (intent) onSwitchIntent(intent);
+                    }}
+                  />
                 ))}
               </ol>
             </section>
 
-            <section className="border-t border-border py-9 sm:py-12" aria-labelledby="evidence-heading">
-              <p id="evidence-heading" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold-bright">Evidence, not theatre</p>
-              <div className="mt-5 grid gap-px overflow-hidden border border-border bg-border sm:grid-cols-2">
-                <EvidenceCell label="Showtimes refreshed" value={result.evidence?.showtimes.refreshedAtLabel ?? result.freshnessLabel.replace("AS OF ", "")} />
-                <EvidenceCell
-                  label="Traffic checked"
-                  value={result.evidence
-                    ? `${sourceLabel(result.evidence.outbound.source)} · ${result.evidence.outbound.checkedAtLabel}`
-                    : sourceLabel(result.provenance.routeSource)}
-                />
-                <EvidenceCell
-                  label="Journey home"
-                  value={result.evidence
-                    ? `${evidenceReturnLabel(result.evidence.return.status)}${result.evidence.return.scheduledForLabel ? ` · ${result.evidence.return.scheduledForLabel}` : ""}`
-                    : returnLabel(result.journey.return.status)}
-                  tone={returnTone}
-                />
-                <EvidenceCell label="Theatre exit" value={result.evidence ? `${result.evening.theatreExitBufferMinutes} MINUTE BUFFER` : "15 MINUTE BUFFER"} />
-              </div>
-              <p className="mt-4 font-mono text-[10px] uppercase leading-relaxed tracking-[0.13em] text-ink-muted">
-                {result.provenance.venuesChecked} venues &middot; {result.provenance.showsConsidered} listed shows &middot; {result.provenance.plansScored} viable plans &middot; {result.provenance.transitPlansChecked} return checks
-              </p>
-            </section>
-
-            <section className="border-t border-border pt-9 sm:pt-12" aria-label="Research and controls">
-              <IntentSwitcher active={activeIntent} onSwitch={onSwitchIntent} />
-              <div className="mt-10">
-                <Dossier result={result} dossier={dossier} origin={origin} onStartOver={onStartOver} />
-              </div>
+            <section className="pt-9 sm:pt-11" aria-label="Research and controls">
+              <Dossier result={result} dossier={dossier} origin={origin} onStartOver={onStartOver} />
             </section>
           </div>
         </section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 p-3 backdrop-blur md:hidden" aria-label="Primary actions">
-        <div className="mx-auto grid max-w-[560px] grid-cols-3 gap-2">
+      <div className="result-mobile-actions fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 px-3 pt-3 backdrop-blur md:hidden" aria-label="Primary actions">
+        <div className="mx-auto grid max-w-[560px] grid-cols-[1fr_.75fr_1.35fr] gap-2">
           <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
           <ActionButton onClick={() => setShareOpen(true)} label="Share" icon={<Share2 size={14} />} />
           <ActionLink href={result.districtUrl} variant="primary" label="Book on District" icon={<ExternalLink size={14} />} />
@@ -230,12 +184,88 @@ export function ResultExperience({
   );
 }
 
+function ScreenProofList({
+  score,
+  proof,
+}: {
+  score: number;
+  proof: RecommendationResult["screenProof"];
+}) {
+  return (
+    <div className="mt-6 font-mono uppercase">
+      <dl>
+        <div>
+          <dt className="text-[10px] tracking-[0.14em] text-ink/55">Screen score</dt>
+          <dd className="mt-2 text-[1.7rem] font-medium leading-none tabular-nums text-ink">{score}/100</dd>
+        </div>
+        {proof.imax === "confirmed" && (
+          <div className="mt-5 flex w-24 flex-col gap-2.5">
+            <ProofFact label="IMAX" status={proof.imax} />
+            <ProofFact label="Laser" status={proof.laser} />
+            <ProofFact label="70mm" status={proof.seventyMm} />
+          </div>
+        )}
+      </dl>
+    </div>
+  );
+}
+
+function ProofFact({ label, status }: { label: string; status: ProofStatus }) {
+  const symbol = status === "confirmed" ? "✓" : status === "unavailable" ? "×" : "?";
+  const spokenStatus = status === "confirmed" ? "confirmed" : status === "unavailable" ? "not available" : "not verified";
+  const tone = status === "confirmed" ? "text-gold-bright" : status === "unavailable" ? "text-ink/70" : "text-ink-muted";
+  return (
+    <div className="flex items-baseline justify-between gap-3" aria-label={`${label}: ${spokenStatus}`}>
+      <dt className="text-[10px] tracking-[0.12em] text-ink/60">{label}</dt>
+      <dd aria-hidden="true" className={`text-[1rem] font-medium leading-none ${tone}`}>{symbol}</dd>
+    </div>
+  );
+}
+
 function Fact({ label, value, tone = "text-ink" }: { label: string; value: string; tone?: string }) {
   return (
-    <div>
-      <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink/55">{label}</p>
-      <p className={`mt-1 font-mono text-[11px] uppercase tracking-[0.06em] ${tone}`}>{value}</p>
+    <div className="min-w-0">
+      <p className="font-mono text-[10px] uppercase tracking-[0.13em] text-ink/55">{label}</p>
+      <p className={`mt-1.5 truncate font-mono text-[12px] font-medium uppercase tracking-[0.04em] sm:text-[13px] ${tone}`}>{value}</p>
     </div>
+  );
+}
+
+function RouteDecisionModule({
+  result,
+  heading,
+  detail,
+}: {
+  result: RecommendationResult;
+  heading: string;
+  detail: string;
+}) {
+  const status = result.journey.return.status;
+  const stateClass = status === "good"
+    ? "result-route--live"
+    : status === "stranded"
+      ? "result-route--no-route"
+      : "result-route--unverified";
+  const tone = returnStatusTone(status);
+
+  return (
+    <aside className={`result-route mt-7 border p-4 sm:mt-8 sm:p-5 ${stateClass}`} aria-label={`${heading}. ${detail}`}>
+      <div className="flex items-center justify-between gap-4">
+        <p className={`font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] ${tone}`}>{heading}</p>
+        {status === "good" && (
+          <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted" aria-hidden="true">
+            <span
+              className="block h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: result.journey.return.lineColorHex }}
+            />
+            {result.journey.return.lineLabel}
+          </span>
+        )}
+      </div>
+      <p className="mt-3 font-mono text-[12px] font-medium uppercase leading-[1.65] tracking-[0.045em] text-ink sm:text-[13px]">
+        {detail}
+      </p>
+    </aside>
   );
 }
 
@@ -251,35 +281,34 @@ function TimelineStop({
   returnTone?: string;
 }) {
   return (
-    <li className="relative grid grid-cols-[1.55rem_1fr] items-start gap-3 pb-4 last:pb-0 sm:block sm:pb-0 sm:text-center">
+    <li className="relative grid grid-cols-[1.55rem_1fr] items-start gap-3 pb-5 last:pb-0 sm:block sm:pb-0 sm:text-center">
       <span className={`relative z-10 mt-1 block h-[0.65rem] w-[0.65rem] rounded-full border ${emphasized ? "border-gold bg-gold" : "border-ink-muted bg-bg"} sm:mx-auto`} />
       <div className="sm:mt-3">
-        <p className={`font-mono text-[11px] uppercase tracking-[0.08em] ${label === "Home again" ? returnTone : "text-ink"}`}>{time}</p>
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-ink-muted">{label}</p>
+        <p className={`font-mono text-[13px] font-medium uppercase tracking-[0.055em] ${label === "Home" ? returnTone : "text-ink"}`}>{time}</p>
+        <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">{label}</p>
       </div>
     </li>
   );
 }
 
 function ScoreDimensions({ result }: { result: RecommendationResult }) {
-  const weights = INTENTS[result.score.intent];
   const rows = [
-    { label: "Picture", value: result.score.dimensions.experience, weight: weights.experience },
-    { label: "Total cost", value: result.score.dimensions.cost, weight: weights.cost },
-    { label: "Time", value: result.score.dimensions.time, weight: weights.time },
-    { label: "Way home", value: result.score.dimensions.feasibility, weight: weights.feasibility },
+    { label: "Picture", value: result.score.dimensions.experience },
+    { label: "Total cost", value: result.score.dimensions.cost },
+    { label: "Time", value: result.score.dimensions.time },
+    { label: "Way home", value: result.score.dimensions.feasibility },
   ];
 
   return (
-    <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
+    <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
       {rows.map((row) => (
         <div key={row.label}>
-          <div className="mb-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
+          <div className="mb-2.5 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.085em] text-ink-muted">
             <span>{row.label}</span>
-            <span>{Math.round(row.value * 100)} <span className="text-ink-muted/60">&times; {row.weight.toFixed(2)}</span></span>
+            <span className="tabular-nums">{Math.round(row.value * 100)}</span>
           </div>
-          <div className="h-px bg-border">
-            <div className="h-px bg-gold-bright" style={{ width: `${Math.max(4, Math.round(row.value * 100))}%` }} />
+          <div className="h-[4px] bg-ink/15">
+            <div className="h-[4px] bg-gold-bright" style={{ width: `${Math.max(6, Math.round(row.value * 100))}%` }} />
           </div>
         </div>
       ))}
@@ -287,45 +316,62 @@ function ScoreDimensions({ result }: { result: RecommendationResult }) {
   );
 }
 
-function CounterfactualEditorialRow({ item }: { item: Counterfactual }) {
+function CounterfactualEditorialRow({
+  item,
+  active,
+  onSelect,
+}: {
+  item: Counterfactual;
+  active: boolean;
+  onSelect: () => void;
+}) {
   const displayMetric = item.metric ?? { label: "The trade-off", value: item.detail ?? item.reason ?? "See the alternative brief." };
   const displayReturnStatus = item.returnEvidence ? returnEvidenceLabel(item.returnEvidence) : null;
   const totalLabel = item.totalCostRupees == null ? null : `₹${item.totalCostRupees.toLocaleString("en-IN")} complete night`;
 
   return (
-    <li className={`relative grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3 gap-y-4 py-7 sm:grid-cols-[2.75rem_minmax(0,1fr)_9.5rem] sm:gap-x-6 sm:py-8 ${item.isCurrentRecommendation ? "before:absolute before:inset-y-7 before:left-0 before:w-0.5 before:bg-gold" : ""}`}>
-      <p className="pl-1 font-body text-[1.55rem] font-light leading-none text-ink/25">{stressRank(item.id)}</p>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className={`font-mono text-[9px] uppercase tracking-[0.12em] ${item.isCurrentRecommendation ? "text-gold-bright" : "text-ink-muted"}`}>{stressLens(item.id, item.label)}</p>
-          {item.isCurrentRecommendation && <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-gold-bright">Verdict holds</p>}
+    <li className={active ? "relative before:absolute before:inset-y-6 before:left-0 before:z-10 before:w-0.5 before:bg-gold" : ""}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        className="grid w-full cursor-pointer grid-cols-[2.15rem_minmax(0,1fr)] gap-x-3 gap-y-5 px-0 py-7 text-left transition-colors hover:bg-[var(--result-panel-soft)] focus-visible:relative focus-visible:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-bright sm:grid-cols-[2.5rem_minmax(0,1fr)_10rem] sm:gap-x-6 sm:py-8"
+      >
+        <p className="pl-1 font-mono text-[1rem] font-medium leading-none text-ink/25">{stressRank(item.id)}</p>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className={`font-mono text-[10.5px] uppercase tracking-[0.1em] ${active ? "text-gold-bright" : "text-ink-muted"}`}>{stressLens(item.id, item.label)}</p>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">{stressLensDetail(item.id)}</p>
+            </div>
+            {active ? <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-gold-bright">Active</p> : item.isCurrentRecommendation ? <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">Same pick</p> : null}
+          </div>
+          <p className="mt-3 font-body text-[1.3rem] font-semibold leading-[1.2] text-ink sm:text-[1.4rem]">{item.title ?? item.venueName}</p>
+          {item.locality && <p className="mt-1 font-body text-[0.95rem] leading-[1.4] text-ink-muted">{item.locality}</p>}
+          <div className="mt-4 grid grid-cols-3 divide-x divide-border border-y border-border">
+            <LedgerFact label="Screen" value={item.format} />
+            <LedgerFact label="Starts" value={item.showtime} />
+            <LedgerFact label="Ticket" value={item.priceLabel} />
+          </div>
+          <p className="mt-3 font-mono text-[10px] uppercase leading-relaxed tracking-[0.045em] text-ink-muted">
+            {[item.dateLabel, totalLabel].filter(Boolean).join(" · ")}
+            {displayReturnStatus && <> <span aria-hidden="true">&middot;</span> <span className={returnEvidenceTone(item.returnEvidence)}>{displayReturnStatus}</span></>}
+          </p>
         </div>
-        <p className="mt-2 max-w-[34ch] font-body text-[0.95rem] leading-[1.42] text-ink/75">{stressQuestion(item.id, item.question ?? item.label)}</p>
-        <p className="mt-4 font-body text-[1.3rem] font-semibold leading-[1.2] text-ink sm:text-[1.4rem]">{item.title ?? item.venueName}</p>
-        {item.locality && <p className="mt-1 font-body text-[0.95rem] leading-[1.4] text-ink-muted">{item.locality}</p>}
-        <div className="mt-4 grid grid-cols-3 divide-x divide-border border-y border-border">
-          <LedgerFact label="Screen" value={item.format} />
-          <LedgerFact label="Starts" value={item.showtime} />
-          <LedgerFact label="Ticket" value={item.priceLabel} />
+        <div className="col-start-2 border-l border-border pl-4 sm:col-start-3 sm:row-start-1 sm:min-w-[10rem] sm:pl-5 sm:text-right">
+          <p className="font-mono text-[1.4rem] font-medium leading-none tabular-nums text-ink sm:text-[1.55rem]">{displayMetric.value}</p>
+          <p className="mt-2 font-mono text-[10px] uppercase leading-relaxed tracking-[0.085em] text-ink-muted">{displayMetric.label}</p>
         </div>
-        <p className="mt-3 font-mono text-[8.5px] uppercase tracking-[0.06em] text-ink-muted">
-          {[item.dateLabel, totalLabel].filter(Boolean).join(" · ")}
-          {displayReturnStatus && <> <span aria-hidden="true">&middot;</span> <span className={returnEvidenceTone(item.returnEvidence)}>{displayReturnStatus}</span></>}
-        </p>
-      </div>
-      <div className="col-start-2 border-l border-gold/50 pl-4 sm:col-start-3 sm:row-start-1 sm:min-w-[9.5rem] sm:pl-5 sm:text-right">
-        <p className="font-mono text-[1.35rem] font-medium leading-none tabular-nums text-ink sm:text-[1.45rem]">{displayMetric.value}</p>
-        <p className="mt-2 font-mono text-[8.5px] uppercase tracking-[0.1em] text-ink-muted">{displayMetric.label}</p>
-      </div>
+      </button>
     </li>
   );
 }
 
 function LedgerFact({ label, value }: { label: string; value?: string }) {
   return (
-    <div className="min-h-[3.5rem] px-2 py-2 sm:px-3">
-      <p className="font-mono text-[8px] uppercase tracking-[0.12em] text-ink-muted">{label}</p>
-      <p className="mt-1 font-mono text-[9px] uppercase leading-tight tracking-[0.08em] text-ink">{value ?? "—"}</p>
+    <div className="min-h-[3.75rem] px-2.5 py-2.5 sm:px-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">{label}</p>
+      <p className="mt-1.5 font-mono text-[10.5px] font-medium uppercase leading-tight tracking-[0.055em] text-ink">{value ?? "—"}</p>
     </div>
   );
 }
@@ -338,55 +384,24 @@ function stressRank(id?: string): string {
 }
 
 function stressLens(id?: string, fallback?: string): string {
-  if (id === "picture-first") return "Screen above all";
-  if (id === "price-first") return "Complete-night cost";
-  if (id === "earliest-home") return "Earliest home";
-  return fallback ?? "A different brief";
+  if (id === "picture-first") return "The Full Epic";
+  if (id === "price-first") return "Worth Every Rupee";
+  if (id === "earliest-home") return "The Easy Evening";
+  return fallback ?? "Another priority";
 }
 
-function stressQuestion(id?: string, fallback?: string): string {
-  if (id === "picture-first") return "If picture alone decided it.";
-  if (id === "price-first") return "If complete-night cost alone decided it.";
-  if (id === "earliest-home") return "If arriving home earliest decided it.";
-  return fallback ?? "If the brief changed.";
+function stressLensDetail(id?: string): string {
+  if (id === "picture-first") return "Picture first";
+  if (id === "price-first") return "Value first";
+  if (id === "earliest-home") return "Ease first";
+  return "";
 }
 
-function EvidenceCell({ label, value, tone = "text-ink" }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="min-h-[5.75rem] bg-bg-raised px-4 py-4">
-      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-muted">{label}</p>
-      <p className={`mt-2 font-mono text-[11px] uppercase tracking-[0.08em] ${tone}`}>{value}</p>
-    </div>
-  );
-}
-
-function IntentSwitcher({ active, onSwitch }: { active: IntentId; onSwitch: (intent: IntentId) => void }) {
-  return (
-    <div>
-      <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-gold-bright">Try another lens</p>
-      <div className="grid gap-px border border-border bg-border sm:grid-cols-3" role="group" aria-label="Recommendation lens">
-        {Object.values(INTENTS).map((intent) => {
-          const isActive = intent.id === active;
-          return (
-            <button
-              key={intent.id}
-              type="button"
-              onClick={() => onSwitch(intent.id)}
-              aria-pressed={isActive}
-              className={`min-h-[4.3rem] px-3 py-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-bright ${
-                isActive ? "bg-gold text-bg" : "bg-bg-raised text-ink-muted hover:bg-bg hover:text-ink"
-              }`}
-            >
-              <span className="block font-mono text-[10px] uppercase tracking-[0.09em]">{intent.label}</span>
-              <span className={`mt-1 block font-body text-[0.9rem] italic ${isActive ? "text-bg/75" : "text-ink-muted"}`}>
-                {intent.id === "full-epic" ? "Picture first." : intent.id === "worth-every-rupee" ? "Value first." : "Ease first."}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+function intentForCounterfactual(id?: string): IntentId | undefined {
+  if (id === "picture-first") return "full-epic";
+  if (id === "price-first") return "worth-every-rupee";
+  if (id === "earliest-home") return "easy-evening";
+  return undefined;
 }
 
 function ActionLink({ href, label, icon, variant }: { href: string; label: string; icon: React.ReactNode; variant: "primary" | "quiet" }) {
@@ -396,10 +411,10 @@ function ActionLink({ href, label, icon, variant }: { href: string; label: strin
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex min-h-11 items-center justify-center gap-2 border px-4 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright ${
+      className={`inline-flex min-h-11 items-center justify-center gap-2 border px-3 font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] transition-colors sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright ${
         primary
           ? "border-gold bg-gold text-bg hover:border-gold-bright hover:bg-gold-bright"
-          : "border-border bg-bg-raised text-ink hover:border-gold/70 hover:text-gold-bright"
+          : "border-border bg-bg text-ink hover:border-ink/30 hover:bg-[var(--result-panel-soft)]"
       }`}
     >
       {label}
@@ -413,7 +428,7 @@ function ActionButton({ onClick, label, icon }: { onClick: () => void; label: st
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-11 items-center justify-center gap-2 border border-border bg-bg-raised px-4 font-mono text-[10px] uppercase tracking-[0.12em] text-ink transition-colors hover:border-gold/70 hover:text-gold-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+      className="inline-flex min-h-11 items-center justify-center gap-2 border border-border bg-bg px-3 font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] text-ink transition-colors hover:border-ink/30 hover:bg-[var(--result-panel-soft)] sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
     >
       {label}
       {icon}
@@ -514,26 +529,10 @@ function returnStatusTone(status: ReturnStatus): string {
   return "text-ink-muted";
 }
 
-function returnLabel(status: ReturnStatus): string {
-  if (status === "good") return "Return verified";
-  if (status === "stranded") return "Cab home required";
-  return "Return to verify";
-}
-
-function sourceLabel(source: RecommendationResult["provenance"]["routeSource"]): string {
-  return source === "live" ? "LIVE GOOGLE ROUTE" : "ESTIMATED ROUTE";
-}
-
-function evidenceReturnLabel(status: "live" | "no-route" | "unverified"): string {
-  if (status === "live") return "TRANSIT SCHEDULED";
-  if (status === "no-route") return "NO TRANSIT · CAB FALLBACK";
-  return "RETURN LOOKUP UNVERIFIED";
-}
-
 function returnEvidenceLabel(status: "live" | "no-route" | "unverified"): string {
-  if (status === "live") return "Transit found";
-  if (status === "no-route") return "Cab home";
-  return "Transit unverified";
+  if (status === "live") return "Transit ✓";
+  if (status === "no-route") return "Transit × · Cab";
+  return "Transit ? · Cab est.";
 }
 
 function returnEvidenceTone(status: Counterfactual["returnEvidence"]): string {

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cinzel:wght@500;600&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -39,6 +39,91 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: '"Source Serif 4"', serif;
+}
+
+/* Results keeps the cinematic rail, then tightens the working column into a
+   calmer instrument surface. These tokens are deliberately local to Results. */
+.result-experience {
+  --bg: #090e15;
+  --bg-raised: #101821;
+  --ink-muted: #9aa4b2;
+  --sea-bright: #72b8be;
+  --wine-bright: #d27a7a;
+  --border: rgba(233, 228, 216, 0.12);
+  --result-panel-soft: rgba(233, 228, 216, 0.025);
+  --result-panel-strong: #121c27;
+}
+
+.result-route {
+  background: #101821;
+}
+
+.result-route--live {
+  border-color: rgba(114, 184, 190, 0.34);
+  background: linear-gradient(110deg, rgba(46, 110, 115, 0.18), #101821 62%);
+  box-shadow: inset 2px 0 0 var(--sea-bright);
+}
+
+.result-route--no-route {
+  border-color: rgba(210, 122, 122, 0.38);
+  background: linear-gradient(110deg, rgba(114, 47, 55, 0.2), #101821 62%);
+  box-shadow: inset 2px 0 0 var(--wine-bright);
+}
+
+.result-route--unverified {
+  border-color: rgba(154, 164, 178, 0.28);
+  background: linear-gradient(110deg, rgba(154, 164, 178, 0.07), #101821 62%);
+  box-shadow: inset 2px 0 0 var(--ink-muted);
+}
+
+.result-mobile-actions {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+/* A deliberately small human note at the end of a very structured result. */
+.build-credit__struck,
+.build-credit__link {
+  font-family: "Caveat", cursive;
+  font-size: 1.35em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.build-credit__struck {
+  position: relative;
+  display: inline-block;
+  color: color-mix(in srgb, var(--ink-muted) 82%, var(--wine-bright));
+}
+
+.build-credit__struck::after {
+  position: absolute;
+  top: 53%;
+  right: -0.08em;
+  left: -0.08em;
+  height: 1.5px;
+  background: currentColor;
+  content: "";
+  transform: rotate(-5deg);
+  transform-origin: center;
+}
+
+.build-credit__link {
+  display: inline-block;
+  margin-left: 0.15em;
+  color: var(--gold-bright);
+  text-decoration: none;
+  transform: rotate(-2deg);
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.build-credit__link:hover {
+  color: var(--ink);
+  transform: rotate(1deg) translateY(-1px);
+}
+
+.build-credit__link:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 3px;
 }
 
 /* The build article is an editorial reading surface, not another scene in

@@ -4,10 +4,18 @@ import showtimesData from "../../data/showtimes-live.json";
 import { FULL_EPIC, WORTH_EVERY_RUPEE, scoreVenue, type IntentWeights } from "../scoring/score";
 import {
   formatProfileIntegrityIssues,
+  getScreenProof,
   getVenueFormatEditorial,
   VENUE_FORMAT_EDITORIALS,
 } from "./formatProfiles";
-import { buildRecommendationNarrative, buildValueComparison, selectedFormatNarrative, type NarrativePlan } from "./recommendationNarrative";
+import type { ReturnLeg } from "../types/recommendation";
+import {
+  buildRecommendationNarrative,
+  buildReturnCopy,
+  buildValueComparison,
+  selectedFormatNarrative,
+  type NarrativePlan,
+} from "./recommendationNarrative";
 
 function plan(overrides: Partial<NarrativePlan> = {}): NarrativePlan {
   const intent = overrides.score?.intent === "worth-every-rupee" ? WORTH_EVERY_RUPEE : FULL_EPIC;
@@ -41,6 +49,29 @@ function plan(overrides: Partial<NarrativePlan> = {}): NarrativePlan {
 }
 
 describe("format-aware recommendation narrative", () => {
+  it("keeps screen proof exact and never turns missing evidence into a cross", () => {
+    expect(getScreenProof("priya-vasant-vihar", "IMAX 2D")).toEqual({
+      imax: "confirmed",
+      laser: "confirmed",
+      seventyMm: "unverified",
+    });
+    expect(getScreenProof("ambience-gurugram-kotak-imax", "IMAX 2D")).toEqual({
+      imax: "confirmed",
+      laser: "unverified",
+      seventyMm: "unverified",
+    });
+    expect(getScreenProof("somewhere", "LASER 2D")).toEqual({
+      imax: "unavailable",
+      laser: "confirmed",
+      seventyMm: "unverified",
+    });
+    expect(getScreenProof("somewhere", "UNMAPPED FORMAT")).toEqual({
+      imax: "unverified",
+      laser: "unverified",
+      seventyMm: "unverified",
+    });
+  });
+
   it("keeps Priya's confirmed laser verdict on its exact IMAX label only", () => {
     expect(selectedFormatNarrative(plan({ venueId: "priya-vasant-vihar", format: "IMAX 2D", experienceScore: 96 })).judgment)
       .toContain("confirmed laser");
@@ -61,8 +92,43 @@ describe("format-aware recommendation narrative", () => {
     const winner = plan({ totalCostRupees: 1450, outboundDurationMinutes: 20, experienceScore: 80 });
     const runnerUp = plan({ venueName: "Slower Venue", totalCostRupees: 700, outboundDurationMinutes: 80, experienceScore: 80 });
     const narrative = buildRecommendationNarrative(winner, runnerUp, timeIntent, 2);
-    expect(narrative.outcome.lead).toBe("Shorter outbound trip than Slower Venue.");
+    expect(narrative.outcome.lead).toBe("OUTBOUND 60 MIN SHORTER");
     expect(narrative.outcome.receipt).toContain("20 vs 80 min outbound");
+  });
+
+  it("renders the decisive comparison as a measured fact", () => {
+    const screenLead = buildRecommendationNarrative(
+      plan({ experienceScore: 96 }),
+      plan({ venueName: "Other Screen", experienceScore: 74 }),
+      FULL_EPIC,
+      2
+    ).outcome.lead;
+    const costLead = buildRecommendationNarrative(
+      plan({ totalCostRupees: 900 }),
+      plan({ venueName: "Costlier Venue", totalCostRupees: 1500 }),
+      WORTH_EVERY_RUPEE,
+      2
+    ).outcome.lead;
+    const returnLead = buildRecommendationNarrative(
+      plan({ returnEvidence: "live" }),
+      plan({ venueName: "No Ride", returnEvidence: "no-route" }),
+      FULL_EPIC,
+      2
+    ).outcome.lead;
+
+    expect(screenLead).toBe("SCREEN +22");
+    expect(costLead).toContain("LESS DOOR TO DOOR");
+    expect(returnLead).toBe("TRANSIT CHECKED / NO PUBLIC TRANSIT");
+    expect(`${screenLead} ${costLead} ${returnLead}`).not.toMatch(
+      /Stronger screen evidence|Lower complete-night cost|Shorter outbound trip|More reliable return evidence/i
+    );
+  });
+
+  it("uses plan scores for an honest near tie", () => {
+    const winner = plan();
+    const runnerUp = plan({ venueName: "Same Numbers" });
+    const narrative = buildRecommendationNarrative(winner, runnerUp, FULL_EPIC, 2);
+    expect(narrative.outcome.lead).toMatch(/^PLAN SCORE \d+ \/ \d+$/);
   });
 
   it("keeps intent weighting out of factual receipts", () => {
@@ -75,7 +141,7 @@ describe("format-aware recommendation narrative", () => {
 
   it("uses the precise single-venue fallback", () => {
     const narrative = buildRecommendationNarrative(plan(), undefined, FULL_EPIC, 1);
-    expect(narrative.outcome.lead).toBe("One non-4DX venue produced a reachable, priced show in this window.");
+    expect(narrative.outcome.lead).toBe("ONLY VIABLE VENUE IN THIS WINDOW");
   });
 
   it("only makes picture-versus-comfort value language from exact profiles", () => {
@@ -113,5 +179,55 @@ describe("format-aware recommendation narrative", () => {
     });
 
     expect(invalidKeys).toEqual([]);
+  });
+});
+
+describe("return-state copy", () => {
+  const leg = (overrides: Partial<ReturnLeg>): ReturnLeg => ({
+    status: "good",
+    lineLabel: "YELLOW LINE",
+    lineColorHex: "#FFD200",
+    durationMinutes: 42,
+    costRupees: 60,
+    costIsEstimate: true,
+    headline: "",
+    ...overrides,
+  });
+
+  it("labels a complete live step as first transit, not a full route home", () => {
+    const copy = buildReturnCopy(
+      leg({
+        departureTime: "2026-07-22T16:01:00.000Z",
+        departureStop: "Sikanderpur",
+        vehicleType: "SUBWAY",
+      }),
+      "9:37 PM"
+    );
+    expect(copy.heading).toBe("FIRST TRANSIT");
+    expect(copy.detail).toContain("YELLOW LINE · Sikanderpur · 9:31 PM · 42 MIN · ₹60 EST.");
+    expect(copy.detail).not.toMatch(/metro home|route home/i);
+  });
+
+  it("keeps confirmed no-route and failed lookup copy distinct", () => {
+    const noRoute = buildReturnCopy(leg({ status: "stranded", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
+    const unverified = buildReturnCopy(leg({ status: "unverified", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
+    expect(noRoute).toMatchObject({
+      heading: "CAB HOME",
+      checkedValue: "NO PUBLIC TRANSIT",
+    });
+    expect(noRoute.detail).toContain("NO PUBLIC TRANSIT AFTER 9:37 PM");
+    expect(unverified).toMatchObject({
+      heading: "CAB ESTIMATE",
+      checkedValue: "NOT VERIFIED",
+    });
+    expect(unverified.detail).toContain("TRANSIT NOT VERIFIED");
+  });
+
+  it("does not claim first-transit detail when live fields are incomplete", () => {
+    expect(buildReturnCopy(leg({}), "9:37 PM")).toEqual({
+      heading: "TRANSIT CHECKED",
+      detail: "TRANSIT CHECKED",
+      checkedValue: "TRANSIT CHECKED",
+    });
   });
 });
