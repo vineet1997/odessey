@@ -12,6 +12,7 @@
     "scrape:district": "tsx scripts/scrape-district.ts"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "gsap": "^3.15.0",
     "html-to-image": "^1.11.13",
     "leaflet": "^1.9.4",

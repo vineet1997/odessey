@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { Analytics } from "@vercel/analytics/react";
 import { Prologue } from "./components/Prologue";
 import { Helm } from "./components/Helm";
 import { Crossing } from "./components/Crossing";
@@ -62,61 +63,85 @@ function App() {
   }
 
   if (stage === "prologue") {
-    return <Prologue onComplete={() => setStage("helm")} />;
+    return (
+      <>
+        <Prologue onComplete={() => setStage("helm")} />
+        <Analytics />
+      </>
+    );
   }
 
   if (stage === "helm") {
     return (
-      <Helm
-        onComplete={(helmAnswers) => {
-          setAnswers(helmAnswers);
-          setStage("crossing");
-        }}
-      />
+      <>
+        <Helm
+          onComplete={(helmAnswers) => {
+            setAnswers(helmAnswers);
+            setStage("crossing");
+          }}
+        />
+        <Analytics />
+      </>
     );
   }
 
   if (stage === "crossing" && answers) {
     return (
-      <Crossing
-        origin={answers.origin}
-        when={answers.when}
-        intentId={answers.intentId}
-        onComplete={(computed, dossierEntries) => {
-          setResult(computed);
-          setDossier(dossierEntries);
-          setStage("result");
-        }}
-        onError={(reason) => {
-          setErrorReason(reason);
-          setStage("error");
-        }}
-      />
+      <>
+        <Crossing
+          origin={answers.origin}
+          when={answers.when}
+          intentId={answers.intentId}
+          onComplete={(computed, dossierEntries) => {
+            setResult(computed);
+            setDossier(dossierEntries);
+            setStage("result");
+          }}
+          onError={(reason) => {
+            setErrorReason(reason);
+            setStage("error");
+          }}
+        />
+        <Analytics />
+      </>
     );
   }
 
   if (stage === "error") {
-    return <ErrorScreen reason={errorReason ?? "Something went wrong."} onRetry={startOver} />;
+    return (
+      <>
+        <ErrorScreen reason={errorReason ?? "Something went wrong."} onRetry={startOver} />
+        <Analytics />
+      </>
+    );
   }
 
   if (stage === "result" && result && answers) {
     return (
-      <div ref={resultRef} className="w-full">
-        <ResultExperience
-          result={result}
-          dossier={dossier}
-          origin={answers.origin}
-          activeIntent={answers.intentId}
-          onSwitchIntent={switchIntent}
-          onStartOver={startOver}
-        />
-      </div>
+      <>
+        <div ref={resultRef} className="w-full">
+          <ResultExperience
+            result={result}
+            dossier={dossier}
+            origin={answers.origin}
+            activeIntent={answers.intentId}
+            onSwitchIntent={switchIntent}
+            onStartOver={startOver}
+          />
+        </div>
+        <Analytics />
+      </>
     );
   }
 
   // Shouldn't be reachable (every stage above returns), but keeps the
   // component total rather than silently rendering nothing.
-  return <Helm onComplete={(helmAnswers) => { setAnswers(helmAnswers); setStage("crossing"); }} />;
+  return (
+    <>
+      <Helm onComplete={(helmAnswers) => { setAnswers(helmAnswers); setStage("crossing"); }} />
+      <Analytics />
+    </>
+  );
 }
 
 function ErrorScreen({ reason, onRetry }: { reason: string; onRetry: () => void }) {
