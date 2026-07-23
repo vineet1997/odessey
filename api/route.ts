@@ -54,7 +54,7 @@ interface RouteResult {
   };
 }
 
-type RouteUnavailableReason = "not_configured" | "no_route" | "service_error";
+type RouteUnavailableReason = "not_configured" | "no_route" | "no_metro_route" | "service_error";
 
 class RouteUnavailableError extends Error {
   constructor(
@@ -160,7 +160,15 @@ async function callGoogleRoutes(
         },
         travelMode: mode,
         ...(mode === "DRIVE" ? { routingPreference: "TRAFFIC_AWARE" } : {}),
-        ...(mode === "TRANSIT" && departureTime ? { departureTime } : {}),
+        ...(mode === "TRANSIT"
+          ? {
+              ...(departureTime ? { departureTime } : {}),
+              // Ithaka's public-transport promise is deliberately metro-only.
+              // Google's preference is not a hard filter, so the response is
+              // also validated below before it can become a recommendation.
+              transitPreferences: { allowedTravelModes: ["SUBWAY"], routingPreference: "FEWER_TRANSFERS" },
+            }
+          : {}),
       }),
     });
 
@@ -212,14 +220,24 @@ async function callGoogleRoutes(
     };
 
     if (mode === "TRANSIT") {
-      const transitStep = route.legs
+      const transitSteps = route.legs
         ?.flatMap((leg) => leg.steps ?? [])
-        .find((step) => step.travelMode === "TRANSIT" && step.transitDetails);
+        .filter((step) => step.travelMode === "TRANSIT" && step.transitDetails) ?? [];
+      const transitStep = transitSteps[0];
       const details = transitStep?.transitDetails;
       const stopDetails = details?.stopDetails;
       const line = details?.transitLine;
       if (!stopDetails?.departureTime || !stopDetails.departureStop?.name || !line) {
         throw new RouteUnavailableError("no_route", "Transit route had no scheduled transit step");
+      }
+
+      const vehicleTypes = transitSteps.map((step) => step.transitDetails?.transitLine?.vehicle?.type ?? "UNKNOWN");
+      const isMetroOnly = vehicleTypes.length > 0 && vehicleTypes.every((type) => type === "SUBWAY");
+      if (!isMetroOnly) {
+        throw new RouteUnavailableError(
+          "no_metro_route",
+          `Route did not satisfy Ithaka's metro-only policy (${vehicleTypes.join(", ")})`
+        );
       }
 
       const fare = route.travelAdvisory?.transitFare;

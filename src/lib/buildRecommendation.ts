@@ -48,6 +48,7 @@ import type {
   EveningTimeline,
   RecommendationEvidence,
   RecommendationResult,
+  ReturnFallbackReason,
   ReturnEvidenceStatus,
 } from "../types/recommendation";
 
@@ -55,6 +56,7 @@ const FILM_RUNTIME_MINUTES = 172; // BRIEF.md — The Odyssey's runtime
 const THEATRE_EXIT_BUFFER_MINUTES = 15;
 const TRANSIT_FINALIST_LIMIT = 12;
 const TRANSIT_FARE_FALLBACK_RUPEES = 60;
+export const MAX_METRO_DEPARTURE_DELAY_MINUTES = 45;
 
 // Uncalibrated placeholder — see module doc comment #1.
 const CAB_BASE_FARE_RUPEES = 60;
@@ -116,7 +118,7 @@ interface RouteApiResponse {
   source: "live" | "estimated" | "unavailable";
   durationMinutes?: number;
   distanceKm?: number;
-  reasonCode?: "not_configured" | "no_route" | "service_error";
+  reasonCode?: "not_configured" | "no_route" | "no_metro_route" | "service_error";
   transit?: {
     departureTime: string;
     departureStop: string;
@@ -143,6 +145,8 @@ interface ReturnJourney extends TimelineReturnJourney {
   lineName?: string;
   lineColorHex?: string;
   vehicleType?: string;
+  fallbackReason?: ReturnFallbackReason;
+  cabEstimateAvailable: boolean;
 }
 
 /** One scored candidate (venue x format x show), shaped for the dossier/map
@@ -227,8 +231,22 @@ function formatFreshnessLabel(fetchedAtIso: string): string {
 }
 
 /** Uncalibrated placeholder — see module doc comment #3. */
-function estimateCabFare(distanceKm: number): number {
-  return Math.round((CAB_BASE_FARE_RUPEES + CAB_PER_KM_RUPEES * distanceKm) / 10) * 10;
+interface CabEstimate {
+  amountRupees: number;
+  available: boolean;
+}
+
+/** The price formula is an approximation. This availability guard prevents a
+ * malformed route from turning into a blank or invented cab price. */
+function estimateCabFare(distanceKm: number, context: string): CabEstimate {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    console.error("[ithaka mobility] Cab estimate unavailable: invalid route distance", { context, distanceKm });
+    return { amountRupees: 0, available: false };
+  }
+  return {
+    amountRupees: Math.round((CAB_BASE_FARE_RUPEES + CAB_PER_KM_RUPEES * distanceKm) / 10) * 10,
+    available: true,
+  };
 }
 
 /** The earliest realistic time a person can start the trip home. The date
@@ -239,6 +257,16 @@ export function departureTimeForShow(show: Pick<Show, "date" | "time">): string 
   const departureMinutes =
     parseTimeToMinutes(show.time) + FILM_RUNTIME_MINUTES + THEATRE_EXIT_BUFFER_MINUTES;
   return new Date(midnightIst.getTime() + departureMinutes * 60_000).toISOString();
+}
+
+/** A returned route can be technically valid but start after morning service
+ * resumes. A metro departure must be part of the same night to be usable. */
+export function isTimelyMetroDeparture(theatreExitTime: string, metroDepartureTime: string): boolean {
+  const theatreExitMs = Date.parse(theatreExitTime);
+  const metroDepartureMs = Date.parse(metroDepartureTime);
+  if (!Number.isFinite(theatreExitMs) || !Number.isFinite(metroDepartureMs)) return false;
+  const waitMinutes = (metroDepartureMs - theatreExitMs) / 60_000;
+  return waitMinutes >= -1 && waitMinutes <= MAX_METRO_DEPARTURE_DELAY_MINUTES;
 }
 
 function journeyKeyOf(candidate: Pick<FinalCandidate, "venue" | "show">): string {
@@ -285,11 +313,17 @@ async function fetchTransitHome(
   departureTime: string,
   cabRoute: ResolvedRoute
 ): Promise<ReturnJourney> {
-  const cabFallback: ReturnJourney = {
-    evidence: "unverified",
+  const cabEstimate = estimateCabFare(cabRoute.distanceKm, "return-home fallback");
+  const cabFallbackFor = (evidence: ReturnEvidence, fallbackReason: ReturnFallbackReason): ReturnJourney => ({
+    evidence,
     durationMinutes: cabRoute.durationMinutes,
-    costRupees: estimateCabFare(cabRoute.distanceKm),
+    costRupees: cabEstimate.amountRupees,
     costIsEstimate: true,
+    cabEstimateAvailable: cabEstimate.available,
+    fallbackReason,
+  });
+  const cabFallback: ReturnJourney = {
+    ...cabFallbackFor("unverified", "lookup-unavailable"),
   };
 
   try {
@@ -306,7 +340,9 @@ async function fetchTransitHome(
     if (!res.ok) return cabFallback;
     const data = (await res.json()) as RouteApiResponse;
     if (data.source === "unavailable") {
-      return { ...cabFallback, evidence: data.reasonCode === "no_route" ? "no-route" : "unverified" };
+      return data.reasonCode === "no_route" || data.reasonCode === "no_metro_route"
+        ? cabFallbackFor("no-route", "no-metro-route")
+        : cabFallback;
     }
     if (
       data.source !== "live" ||
@@ -316,6 +352,20 @@ async function fetchTransitHome(
       !data.transit.lineName
     ) {
       return cabFallback;
+    }
+    if (data.transit.vehicleType !== "SUBWAY") {
+      console.error("[ithaka mobility] Rejected non-metro route returned by the route API", {
+        vehicleType: data.transit.vehicleType,
+      });
+      return cabFallbackFor("no-route", "no-metro-route");
+    }
+    if (!isTimelyMetroDeparture(departureTime, data.transit.departureTime)) {
+      console.info("[ithaka mobility] Rejected metro route after excessive wait", {
+        theatreExit: departureTime,
+        metroDeparture: data.transit.departureTime,
+        maxWaitMinutes: MAX_METRO_DEPARTURE_DELAY_MINUTES,
+      });
+      return cabFallbackFor("no-route", "metro-too-late");
     }
 
     return {
@@ -328,6 +378,7 @@ async function fetchTransitHome(
       lineName: data.transit.lineName,
       lineColorHex: data.transit.lineColorHex,
       vehicleType: data.transit.vehicleType,
+      cabEstimateAvailable: cabEstimate.available,
     };
   } catch {
     return cabFallback;
@@ -544,7 +595,7 @@ function scoreCandidateWithReturn(
   returnJourney: ReturnJourney,
   intentWeights: (typeof INTENTS)[IntentId]
 ): Scored {
-  const cabFare = estimateCabFare(candidate.route.distanceKm);
+  const cabFare = estimateCabFare(candidate.route.distanceKm, "outbound scoring").amountRupees;
   const showEndMinutes = parseTimeToMinutes(candidate.show.time) + FILM_RUNTIME_MINUTES;
   const context: UserContext = {
     ticketPriceRupeesPerPerson: candidate.show.priceRange!.min,
@@ -576,10 +627,12 @@ function buildJourneyLegs(scored: Scored) {
   const isLive = returnJourney.evidence === "live";
   const isNoRoute = returnJourney.evidence === "no-route";
   const returnHeadline = isLive
-    ? `Route home found: ${formatTransitTime(returnJourney.departureTime!)} from ${returnJourney.departureStop}.`
+    ? `Metro home: ${formatTransitTime(returnJourney.departureTime!)} from ${returnJourney.departureStop}.`
     : isNoRoute
-      ? `No public-transport route found after the ${showEnd} finish.`
-      : `Public transport after the ${showEnd} finish could not be verified.`;
+      ? returnJourney.fallbackReason === "metro-too-late"
+        ? `Metro does not run soon enough after the ${showEnd} finish.`
+        : `No metro route after the ${showEnd} finish.`
+      : `Metro after the ${showEnd} finish could not be verified.`;
 
   const returnLeg = {
     lineLabel: isLive ? returnJourney.lineName! : "CAB",
@@ -587,6 +640,7 @@ function buildJourneyLegs(scored: Scored) {
     durationMinutes: returnJourney.durationMinutes,
     costRupees: returnJourney.costRupees,
     costIsEstimate: returnJourney.costIsEstimate,
+    cabEstimateAvailable: returnJourney.cabEstimateAvailable,
     status: (isLive ? "good" : isNoRoute ? "stranded" : "unverified") as
       | "good"
       | "stranded"
@@ -601,7 +655,12 @@ function buildJourneyLegs(scored: Scored) {
           departureStop: returnJourney.departureStop,
           vehicleType: returnJourney.vehicleType,
         }
-      : { cabFallbackLabel: `Cab back ≈ ₹${scored.cabFare}` }),
+      : {
+          cabFallbackLabel: returnJourney.cabEstimateAvailable
+            ? `Cab back ≈ ₹${returnJourney.costRupees}`
+            : "Cab price unavailable — check a ride app before leaving.",
+          fallbackReason: returnJourney.fallbackReason,
+        }),
   };
 
   return { outbound, returnLeg };
@@ -834,7 +893,7 @@ export async function buildRecommendation(
   //     rather than one preselected show per venue/format. ---
   const intentWeights = INTENTS[intentId];
   const fallbackScored = finalCandidates.map((candidate) => {
-    const cabFare = estimateCabFare(candidate.route.distanceKm);
+    const cabFare = estimateCabFare(candidate.route.distanceKm, "fallback scoring").amountRupees;
     return scoreCandidateWithReturn(
       candidate,
       {
@@ -842,6 +901,8 @@ export async function buildRecommendation(
         durationMinutes: candidate.route.durationMinutes,
         costRupees: cabFare,
         costIsEstimate: true,
+        cabEstimateAvailable: cabFare > 0,
+        fallbackReason: "lookup-unavailable",
       },
       intentWeights
     );
@@ -857,6 +918,7 @@ export async function buildRecommendation(
         durationMinutes: 1,
         costRupees: 0,
         costIsEstimate: false,
+        cabEstimateAvailable: true,
       },
       intentWeights
     );

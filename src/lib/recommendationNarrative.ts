@@ -61,40 +61,46 @@ function formatReturnTime(iso: string): string {
  * scheduled transit step, not every leg and transfer. */
 export function buildReturnCopy(leg: ReturnLeg, theatreExitTime: string): ReturnCopy {
   const hasFirstTransit = Boolean(leg.departureTime && leg.departureStop && leg.lineLabel);
+  const hasCabEstimate = leg.cabEstimateAvailable !== false && Number.isFinite(leg.costRupees) && leg.costRupees > 0;
   if (leg.status === "good" && hasFirstTransit) {
     const departure = formatReturnTime(leg.departureTime!);
     const fare = `₹${leg.costRupees.toLocaleString("en-IN")}${leg.costIsEstimate ? " EST." : ""}`;
     return {
-      heading: "FIRST TRANSIT",
+      heading: "METRO HOME",
       detail: `${leg.lineLabel} · ${leg.departureStop} · ${departure} · ${leg.durationMinutes} MIN · ${fare}`,
-      checkedValue: `FIRST TRANSIT · ${leg.lineLabel} · ${departure}`,
+      checkedValue: `METRO · ${leg.lineLabel} · ${departure}`,
     };
   }
   if (leg.status === "stranded") {
+    const metroState = leg.fallbackReason === "metro-too-late" ? "METRO DOES NOT RUN SOON ENOUGH" : "NO METRO ROUTE";
     return {
       heading: "CAB HOME",
-      detail: `NO PUBLIC TRANSIT AFTER ${theatreExitTime.toUpperCase()} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`,
-      checkedValue: "NO PUBLIC TRANSIT",
+      detail: hasCabEstimate
+        ? `${metroState} AFTER ${theatreExitTime.toUpperCase()} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`
+        : `${metroState} AFTER ${theatreExitTime.toUpperCase()} · CAB PRICE UNAVAILABLE`,
+      checkedValue: metroState,
     };
   }
   if (leg.status === "unverified") {
     return {
       heading: "CAB ESTIMATE",
-      detail: `TRANSIT NOT VERIFIED · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`,
-      checkedValue: "NOT VERIFIED",
+      detail: hasCabEstimate
+        ? `METRO NOT VERIFIED · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`
+        : "METRO NOT VERIFIED · CAB PRICE UNAVAILABLE",
+      checkedValue: "METRO NOT VERIFIED",
     };
   }
   return {
-    heading: "TRANSIT CHECKED",
-    detail: "TRANSIT CHECKED",
-    checkedValue: "TRANSIT CHECKED",
+    heading: "METRO CHECKED",
+    detail: "METRO CHECKED",
+    checkedValue: "METRO CHECKED",
   };
 }
 
 function returnReceiptLabel(evidence: NarrativePlan["returnEvidence"]): string {
-  if (evidence === "live") return "scheduled transit found";
-  if (evidence === "no-route") return "no public-transport route found";
-  return "transit unverified";
+  if (evidence === "live") return "metro route found";
+  if (evidence === "no-route") return "no metro route found";
+  return "metro unverified";
 }
 
 function formatRupees(value: number): string {
@@ -148,9 +154,9 @@ export function outcomeNarrative(
 
   const decisive = decisiveDimension(winner, runnerUp, intent);
   const returnState = (evidence: NarrativePlan["returnEvidence"]): string => {
-    if (evidence === "live") return "TRANSIT CHECKED";
-    if (evidence === "no-route") return "NO PUBLIC TRANSIT";
-    return "NOT VERIFIED";
+    if (evidence === "live") return "METRO CHECKED";
+    if (evidence === "no-route") return "NO METRO ROUTE";
+    return "METRO NOT VERIFIED";
   };
   const leadByDimension = {
     experience: `SCREEN +${winner.experienceScore - runnerUp.experienceScore}`,

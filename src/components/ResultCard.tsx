@@ -257,8 +257,9 @@ export function ResultCard({ result }: ResultCardProps) {
             <span className="text-[11px] font-medium">{journey.return.cabFallbackLabel}</span>
           )}
           <span className="text-[10px] opacity-80">
-            RETURN · {journey.return.durationMinutes} MIN · {journey.return.costIsEstimate ? "≈" : ""}₹
-            {journey.return.costRupees}
+            {journey.return.cabEstimateAvailable === false
+              ? "RETURN · CAB PRICE UNAVAILABLE"
+              : `RETURN · ${journey.return.durationMinutes} MIN · ${journey.return.costIsEstimate ? "≈" : ""}₹${journey.return.costRupees}`}
           </span>
         </div>
 

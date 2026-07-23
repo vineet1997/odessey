@@ -9,6 +9,7 @@ import type { RecommendationNarrative, NarrativeValueComparison } from "../lib/r
 
 export type ReturnStatus = "good" | "stranded" | "unverified";
 export type ReturnEvidenceStatus = "live" | "no-route" | "unverified";
+export type ReturnFallbackReason = "no-metro-route" | "metro-too-late" | "lookup-unavailable";
 export type ProofStatus = "confirmed" | "unavailable" | "unverified";
 
 /** Equipment proof for the exact selected presentation. Unknown evidence
@@ -96,6 +97,9 @@ export interface JourneyLeg {
   durationMinutes: number;
   costRupees: number;
   costIsEstimate?: boolean;
+  /** A defensive display guard: a broken upstream route must never turn into
+   * an empty or invented cab price. */
+  cabEstimateAvailable?: boolean;
 }
 
 export interface ReturnLeg extends JourneyLeg {
@@ -110,6 +114,8 @@ export interface ReturnLeg extends JourneyLeg {
   departureTime?: string;
   departureStop?: string;
   vehicleType?: string;
+  /** Why cab replaced metro, when the route is not a confirmed metro plan. */
+  fallbackReason?: ReturnFallbackReason;
 }
 
 export interface RunnerUp {

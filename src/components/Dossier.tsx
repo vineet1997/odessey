@@ -168,9 +168,9 @@ function DossierRow({ entry }: { entry: DossierEntry }) {
 }
 
 function returnEvidenceLabel(evidence: DossierEntry["returnEvidence"]): string {
-  if (evidence === "live") return "TRANSIT ✓";
-  if (evidence === "no-route") return "TRANSIT × · CAB";
-  return "TRANSIT ? · CAB EST.";
+  if (evidence === "live") return "METRO ✓";
+  if (evidence === "no-route") return "METRO × · CAB";
+  return "METRO ? · CAB EST.";
 }
 
 export default Dossier;

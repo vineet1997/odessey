@@ -118,7 +118,7 @@ describe("format-aware recommendation narrative", () => {
 
     expect(screenLead).toBe("SCREEN +22");
     expect(costLead).toContain("LESS DOOR TO DOOR");
-    expect(returnLead).toBe("TRANSIT CHECKED / NO PUBLIC TRANSIT");
+    expect(returnLead).toBe("METRO CHECKED / NO METRO ROUTE");
     expect(`${screenLead} ${costLead} ${returnLead}`).not.toMatch(
       /Stronger screen evidence|Lower complete-night cost|Shorter outbound trip|More reliable return evidence/i
     );
@@ -194,7 +194,7 @@ describe("return-state copy", () => {
     ...overrides,
   });
 
-  it("labels a complete live step as first transit, not a full route home", () => {
+  it("labels a complete live step as metro, not a full route home", () => {
     const copy = buildReturnCopy(
       leg({
         departureTime: "2026-07-22T16:01:00.000Z",
@@ -203,7 +203,7 @@ describe("return-state copy", () => {
       }),
       "9:37 PM"
     );
-    expect(copy.heading).toBe("FIRST TRANSIT");
+    expect(copy.heading).toBe("METRO HOME");
     expect(copy.detail).toContain("YELLOW LINE · Sikanderpur · 9:31 PM · 42 MIN · ₹60 EST.");
     expect(copy.detail).not.toMatch(/metro home|route home/i);
   });
@@ -213,21 +213,30 @@ describe("return-state copy", () => {
     const unverified = buildReturnCopy(leg({ status: "unverified", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
     expect(noRoute).toMatchObject({
       heading: "CAB HOME",
-      checkedValue: "NO PUBLIC TRANSIT",
+      checkedValue: "NO METRO ROUTE",
     });
-    expect(noRoute.detail).toContain("NO PUBLIC TRANSIT AFTER 9:37 PM");
+    expect(noRoute.detail).toContain("NO METRO ROUTE AFTER 9:37 PM");
     expect(unverified).toMatchObject({
       heading: "CAB ESTIMATE",
-      checkedValue: "NOT VERIFIED",
+      checkedValue: "METRO NOT VERIFIED",
     });
-    expect(unverified.detail).toContain("TRANSIT NOT VERIFIED");
+    expect(unverified.detail).toContain("METRO NOT VERIFIED");
+  });
+
+  it("never renders a blank cab value when a route distance is malformed", () => {
+    const copy = buildReturnCopy(
+      leg({ status: "stranded", costRupees: 0, cabEstimateAvailable: false }),
+      "2:37 AM"
+    );
+    expect(copy.detail).toContain("CAB PRICE UNAVAILABLE");
+    expect(copy.detail).not.toMatch(/₹0|undefined|NaN/);
   });
 
   it("does not claim first-transit detail when live fields are incomplete", () => {
     expect(buildReturnCopy(leg({}), "9:37 PM")).toEqual({
-      heading: "TRANSIT CHECKED",
-      detail: "TRANSIT CHECKED",
-      checkedValue: "TRANSIT CHECKED",
+      heading: "METRO CHECKED",
+      detail: "METRO CHECKED",
+      checkedValue: "METRO CHECKED",
     });
   });
 });

@@ -5,6 +5,7 @@ import {
   departureTimeForShow,
   filterMakeableShows,
   isFourDxFormat,
+  isTimelyMetroDeparture,
   isoDateOf,
   resolveExperienceScore,
   viableShowsForRoute,
@@ -59,6 +60,18 @@ describe("departureTimeForShow", () => {
     expect(departureTimeForShow(show({ date: "2026-07-22", time: "10:30 PM" }))).toBe(
       "2026-07-22T20:07:00.000Z"
     );
+  });
+});
+
+describe("isTimelyMetroDeparture", () => {
+  it("accepts a metro departure that follows theatre exit within the policy window", () => {
+    expect(isTimelyMetroDeparture("2026-07-22T21:07:00.000Z", "2026-07-22T21:42:00.000Z")).toBe(true);
+  });
+
+  it("rejects the first service after morning restart as a journey-home option", () => {
+    // 2:37 AM IST exit, 8:05 AM IST first service: technically routable,
+    // but not a reasonable metro journey home.
+    expect(isTimelyMetroDeparture("2026-07-22T21:07:00.000Z", "2026-07-23T02:35:00.000Z")).toBe(false);
   });
 });
 
