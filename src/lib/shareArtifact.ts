@@ -16,6 +16,7 @@ export interface ShareArtifactModel {
 }
 
 const FALLBACK_REGION = "DELHI NCR";
+const PUBLIC_SITE_URL = "https://ithaka.vineet.cc/";
 
 function safeRegion(origin: Origin): string {
   const value = origin.region?.trim();
@@ -23,15 +24,10 @@ function safeRegion(origin: Origin): string {
   return FALLBACK_REGION;
 }
 
-/** Always provide a clean public homepage, never an active result/route. */
-export function normalizedPublicUrl(configured?: string, runtimeOrigin?: string): string {
-  const fallback = runtimeOrigin || "https://odessey-topaz.vercel.app";
-  try {
-    const url = new URL(configured || fallback, fallback);
-    return `${url.protocol}//${url.host}/`;
-  } catch {
-    return "https://odessey-topaz.vercel.app/";
-  }
+/** Share invitations always lead to Ithaka's canonical homepage, never a
+ * preview deployment, local server, active result or route. */
+export function normalizedPublicUrl(): string {
+  return PUBLIC_SITE_URL;
 }
 
 function filenameFor(venueName: string): string {
@@ -40,7 +36,7 @@ function filenameFor(venueName: string): string {
 }
 
 export function buildShareArtifactModel(result: RecommendationResult, origin: Origin): ShareArtifactModel {
-  const publicUrl = normalizedPublicUrl(import.meta.env.VITE_PUBLIC_SITE_URL, typeof window === "undefined" ? undefined : window.location.origin);
+  const publicUrl = normalizedPublicUrl();
   const date = result.dateLabel;
   const format = result.formatChip;
   const venueName = result.venueName;

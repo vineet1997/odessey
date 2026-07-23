@@ -9,7 +9,7 @@ describe("Screening Declaration share model", () => {
   it("creates the exact social invitation and public homepage", () => {
     const model = buildShareArtifactModel(sampleResult, privateOrigin);
     expect(model.caption).toBe(
-      "The Odyssey. IMAX 2D at PVR Select City Walk, MON JUL 20 · 4:50 PM.\n\nWho’s in?\n\nI found my screening with Ithaka:\nhttps://odessey-topaz.vercel.app/"
+      "The Odyssey. IMAX 2D at PVR Select City Walk, MON JUL 20 · 4:50 PM.\n\nWho’s in?\n\nI found my screening with Ithaka:\nhttps://ithaka.vineet.cc/"
     );
     expect(model.filename).toBe("ithaka-odyssey-plan-pvr-select-city-walk.png");
     expect(model).toMatchObject({ date: "MON JUL 20", format: "IMAX 2D", showtime: "4:50 PM", venueName: "PVR Select City Walk" });
@@ -32,8 +32,7 @@ describe("Screening Declaration share model", () => {
     }
   });
 
-  it("normalizes configured URLs to the public homepage", () => {
-    expect(normalizedPublicUrl("https://odessey-topaz.vercel.app/results?origin=28.5,77.2#x")).toBe("https://odessey-topaz.vercel.app/");
-    expect(normalizedPublicUrl(undefined, "http://localhost/anything?x=1")).toBe("http://localhost/");
+  it("always uses the canonical public homepage", () => {
+    expect(normalizedPublicUrl()).toBe("https://ithaka.vineet.cc/");
   });
 });

@@ -418,6 +418,15 @@ or artifact, name the trade-off, and close with what changed because of it.
 
 ## Change ledger
 
+### 2026-07-23 — Ithaka received its canonical public address
+
+- Set `https://ithaka.vineet.cc/` as the canonical site, Open Graph, Twitter
+  card, social-image and share-caption destination. The random Vercel
+  deployment URL remains infrastructure, not Ithaka's public identity.
+- The share URL always uses the canonical homepage, including from local
+  development and preview deployments, so a downloaded invitation cannot
+  accidentally send someone to localhost or a temporary host.
+
 ### 2026-07-23 — The shared answer became a Screening Declaration
 
 - Replaced the evidence-heavy night brief with **The Screening Declaration**:
