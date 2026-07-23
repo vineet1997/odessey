@@ -64,7 +64,7 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
     const file = new File([blob], model.filename, { type: "image/png" });
     if (navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: "Ithaka", text: model.caption });
+        await navigator.share({ files: [file], title: "My Odyssey plan", text: model.caption });
         return;
       } catch (reason) {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
@@ -91,9 +91,10 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
       <section role="dialog" aria-modal="true" aria-labelledby="share-brief-title" className="relative max-h-[96vh] w-full max-w-[980px] overflow-y-auto border border-border bg-bg px-5 pb-6 pt-5 shadow-2xl sm:rounded-sm sm:p-7">
         <div className="mb-5 flex items-start justify-between gap-5">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.19em] text-gold-bright">Made to travel</p>
-            <h2 id="share-brief-title" className="mt-1 font-display text-2xl text-ink">Share your night brief</h2>
-            <p className="mt-2 max-w-[60ch] font-body text-sm leading-relaxed text-ink-muted">Your exact starting point and route are never included. The image only uses the broad region, screening facts and research receipt.</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.19em] text-gold-bright">A personal poster</p>
+            <h2 id="share-brief-title" className="mt-1 font-display text-2xl text-ink">Share your Odyssey night</h2>
+            <p className="mt-2 max-w-[60ch] font-body text-sm leading-relaxed text-ink-muted">A cinematic invitation for the people you want beside you at the screening.</p>
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.13em] text-ink-muted">Your exact starting point and route are never included.</p>
           </div>
           <button type="button" onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center border border-border text-ink-muted" aria-label="Close share brief"><X size={18} /></button>
         </div>
@@ -101,7 +102,7 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_260px] md:items-start">
           <div className="relative overflow-hidden border border-border bg-[#070b10]">
             {previewUrl ? (
-              <img src={previewUrl} alt="Generated Ithaka night brief" className="block h-auto w-full" />
+              <img src={previewUrl} alt="Generated Ithaka Odyssey screening poster" className="block h-auto w-full" />
             ) : (
               <div className="relative aspect-[4/5] overflow-hidden">
                 <div className="absolute left-1/2 top-0 origin-top -translate-x-1/2 scale-[0.38] sm:scale-[0.5]">
@@ -120,12 +121,12 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
             {state === "loading" && <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-muted"><Loader2 size={14} className="animate-spin motion-reduce:animate-none" /> Rendering the final image</p>}
             {state === "error" && <p className="border-l-2 border-wine pl-3 font-body text-sm italic text-wine-bright">{error}</p>}
             <button type="button" disabled={state !== "ready" || !blob} onClick={() => void shareOrDownload()} className="flex min-h-12 items-center justify-center gap-2 bg-gold px-4 font-mono text-[11px] uppercase tracking-[0.14em] text-bg disabled:cursor-wait disabled:opacity-50">
-              {canNativeShare ? <Share2 size={16} /> : <Download size={16} />}{canNativeShare ? "Share image" : "Download image"}
+              {canNativeShare ? <Share2 size={16} /> : <Download size={16} />}{canNativeShare ? "Share my screening" : "Download image"}
             </button>
             <button type="button" onClick={() => void copyCaption()} className="flex min-h-12 items-center justify-center gap-2 border border-border px-4 font-mono text-[11px] uppercase tracking-[0.14em] text-gold-bright">
-              {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "Copied" : "Copy caption + link"}
+              {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "Copied" : "Copy invitation"}
             </button>
-            <p className="pt-2 font-body text-xs italic leading-relaxed text-ink-muted">One answer, with enough evidence to be useful. No booking controls or personal route data are baked into the image.</p>
+            <p className="pt-2 font-body text-xs italic leading-relaxed text-ink-muted">The poster holds only the screening invitation. No booking controls or personal route data are baked into it.</p>
           </div>
         </div>
       </section>

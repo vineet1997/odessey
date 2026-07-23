@@ -5,49 +5,35 @@ import { buildShareArtifactModel, normalizedPublicUrl } from "./shareArtifact";
 
 const privateOrigin: Origin = { label: "Hauz Khas Village", lat: 28.5494, lng: 77.2001, region: "Delhi NCR" };
 
-function whole(model: ReturnType<typeof buildShareArtifactModel>) {
-  return JSON.stringify(model);
-}
-
-describe("share artifact model", () => {
-  it("builds an exact, provenance-backed brief without exposing the user's origin", () => {
+describe("Screening Declaration share model", () => {
+  it("creates the exact social invitation and public homepage", () => {
     const model = buildShareArtifactModel(sampleResult, privateOrigin);
-    expect(model.provenance).toBe("12 VENUES / 47 SHOWS / 31 VIABLE PLANS");
-    expect(model.comparisonReceipt).toBe("SCREEN 93/100 VS 96/100 · ₹1,180 VS ₹2,800 DOOR TO DOOR.");
-    expect(model.timeline).toHaveLength(5);
-    expect(model.caption).toContain("ONE ANSWER.");
-    expect(whole(model)).not.toMatch(/Hauz Khas|28\.5494|77\.2001|maps\/dir|origin=/i);
+    expect(model.caption).toBe(
+      "The Odyssey. IMAX 2D at PVR Select City Walk, MON JUL 20 · 4:50 PM.\n\nWho’s in?\n\nI found my screening with Ithaka:\nhttps://odessey-topaz.vercel.app/"
+    );
+    expect(model.filename).toBe("ithaka-odyssey-plan-pvr-select-city-walk.png");
+    expect(model).toMatchObject({ date: "MON JUL 20", format: "IMAX 2D", showtime: "4:50 PM", venueName: "PVR Select City Walk" });
+  });
+
+  it("keeps every origin and route detail outside the model, caption and filename", () => {
+    const model = buildShareArtifactModel(sampleResult, privateOrigin);
+    const publicData = JSON.stringify(model);
+    expect(publicData).not.toMatch(/Hauz Khas|28\.5494|77\.2001|maps\/dir|origin=|directions/i);
+    expect(model.caption).not.toMatch(/screen 93|₹|door to door|venues|viable plans|return/i);
     expect(model.filename).not.toMatch(/hauz|28|77/i);
   });
 
-  it.each([
-    ["live", "THE WAY HOME IS SCHEDULED."],
-    ["no-route", "TRANSIT ENDS HERE. PLAN THE CAB HOME."],
-    ["unverified", "THE RETURN NEEDS A FINAL CHECK."],
-  ] as const)("has an operational headline for %s", (status, expected) => {
-    const result = structuredClone(sampleResult);
-    result.evidence.return.status = status;
-    const model = buildShareArtifactModel(result, privateOrigin);
-    expect(model.returnHeadline).toBe(expected);
+  it("does not leak decision receipts, scores or travel facts for any return state", () => {
+    for (const status of ["live", "no-route", "unverified"] as const) {
+      const result = structuredClone(sampleResult);
+      result.evidence.return.status = status;
+      const model = buildShareArtifactModel(result, privateOrigin);
+      expect(JSON.stringify(model)).not.toMatch(/scheduled|cab|return|screen 93|1,180|31 viable/i);
+    }
   });
 
-  it("does not require a runner-up and still uses the raw selected screen score", () => {
-    const result = structuredClone(sampleResult);
-    result.intentLabel = "EASY EVENING";
-    result.screenScore = 71;
-    result.runnerUp = undefined;
-    const model = buildShareArtifactModel(result, privateOrigin);
-    expect(model.comparisonReceipt).toBe("SCREEN 71/100 · ₹1,180 DOOR TO DOOR.");
-  });
-
-  it("normalizes configured URLs to a public homepage", () => {
-    expect(normalizedPublicUrl("https://try-ithaka.example/results?origin=28.5,77.2#x")).toBe("https://try-ithaka.example/");
-    expect(normalizedPublicUrl(undefined, "https://localhost:5173/anything?x=1")).toBe("https://localhost:5173/");
-  });
-
-  it.each(["unverified", "no-route"] as const)("does not present theatre exit as home when return is %s", (status) => {
-    const result = structuredClone(sampleResult);
-    result.evidence.return.status = status;
-    expect(buildShareArtifactModel(result, privateOrigin).timeline.at(-1)).toEqual({ label: "EXIT", time: "7:57 pm" });
+  it("normalizes configured URLs to the public homepage", () => {
+    expect(normalizedPublicUrl("https://odessey-topaz.vercel.app/results?origin=28.5,77.2#x")).toBe("https://odessey-topaz.vercel.app/");
+    expect(normalizedPublicUrl(undefined, "http://localhost/anything?x=1")).toBe("http://localhost/");
   });
 });

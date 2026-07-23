@@ -418,34 +418,26 @@ or artifact, name the trade-off, and close with what changed because of it.
 
 ## Change ledger
 
-### 2026-07-23 — The answer became a shareable night brief
+### 2026-07-23 — The shared answer became a Screening Declaration
 
-- Built **The Passage**, a fixed 1080 × 1350 PNG rather than a screenshot of
-  the responsive result page. It turns the decision into a personal cinematic
-  night brief: verdict, exact screening, five truthful itinerary moments,
-  return status, comparison receipt, provenance, and a direct invitation to
-  find another screen.
-- The visual device is an illuminated *Chronospine*: five itinerary nodes are
-  connected to the helmet's vertebral silhouette by stable inline SVG leader
-  lines. The export deliberately avoids WebGL and export-critical SVG filters
-  so the same composition survives browser capture.
-- Made the share model its own privacy boundary. A shared brief, caption, file
-  name and QR contain no origin label, coordinates, directions URL, or route
-  parameters. At most it says the coarse region; a missing or unsafe region
-  falls back to DELHI NCR.
-- The QR is generated locally with `qrcode.react`, points only to the
-  configured public homepage (or the local homepage in development), and has
-  a quiet zone. No external QR API, tracking path or invented destination is
-  involved.
-- Export waits for the helmet image and document fonts, captures at explicit
-  1080 × 1350 canvas dimensions, and has a timeout plus native-share/download
-  fallback. The composer starts with a live scaled preview, then swaps to the
-  actual generated PNG.
-- The QR and PNG renderer live in an on-demand composer chunk, so people who
-  never press Share do not pay the full creative-tooling cost on initial load.
-- Added raw `screenScore`, complete-night cost and return evidence to the
-  recommendation shape. They are source facts for the share receipt and are
-  never reconstructed from weighted ranking dimensions.
+- Replaced the evidence-heavy night brief with **The Screening Declaration**:
+  a fixed 1080 × 1350 personal film-poster cover made to feel worth posting,
+  not like an exported dashboard. The fixed hierarchy is only the Odyssey,
+  personal plan, date/time, format, venue, optional broad region and Ithaka
+  attribution.
+- Kept the personal statement honest. “MY ODYSSEY PLAN” and “THIS IS MY ONE.”
+  describe a chosen recommendation, rather than implying the user has booked
+  a ticket or that an answer is universally objective.
+- Moved conversion out of the image and into the social caption: a concise
+  “Who’s in?” invitation plus a clean public homepage. The PNG itself has no
+  QR, URL, booking control, score, price, route, return promise, research
+  count, or decision receipt.
+- The share model remains a privacy boundary: the image, caption and filename
+  contain no origin label, coordinates, directions URL or route parameters.
+  A safe coarse region can appear only when it fits the appointment field.
+- Export still waits for helmet/font readiness at explicit 1080 × 1350 canvas
+  dimensions, then offers native share or download with a live-to-final PNG
+  preview in the accessible composer.
 
 ### 2026-07-23 — The result became a briefing for the whole evening
 
