@@ -132,6 +132,20 @@ export interface RunnerUp {
   returnEvidence: ReturnEvidenceStatus;
 }
 
+/** A deliberately surfaced Full Epic trade-off: a strong, meaningfully closer
+ * screen that lost to the selected premium presentation. This is not a second
+ * recommendation; it makes the decision boundary inspectable. */
+export interface FullEpicTradeoff {
+  venueName: string;
+  locality: string;
+  formatChip: string;
+  showtime: string;
+  screenScore: number;
+  outboundDurationMinutes: number;
+  screenPointsGivenUp: number;
+  outboundMinutesSaved: number;
+}
+
 export interface RecommendationResult {
   intentLabel: string; // "WORTH EVERY RUPEE"
   freshnessLabel: string; // "AS OF 18:42"
@@ -164,6 +178,9 @@ export interface RecommendationResult {
   /** Absent when there's only one valid candidate venue for this request —
    * ResultCard renders no runner-up row in that case rather than fabricate one. */
   runnerUp?: RunnerUp;
+  /** Present only for Full Epic when a substantially closer, still-good screen
+   * lost to the selected higher-spec presentation. */
+  fullEpicTradeoff?: FullEpicTradeoff;
   score: ScoreResult;
   /** The selected format's curated screen score. Never infer this from score dimensions. */
   screenScore: number;

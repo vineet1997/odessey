@@ -62,6 +62,8 @@ const MORNING_EDGE_START_MINUTES = 9 * 60;
 const NORMAL_SHOW_START_MINUTES = 12 * 60;
 const NORMAL_SHOW_END_MINUTES = 1 * 60;
 const LASER_IMAX_MAX_EXTRA_OUTBOUND_MINUTES = 30;
+const FULL_EPIC_LOCAL_ALTERNATIVE_MIN_SCREEN_SCORE = 80;
+const FULL_EPIC_LOCAL_ALTERNATIVE_MIN_TRAVEL_SAVINGS = 15;
 
 // Uncalibrated placeholder — see module doc comment #1.
 const CAB_BASE_FARE_RUPEES = 60;
@@ -709,6 +711,51 @@ function isFullEpicMorningImaxCompromise(
   return hasMorningImax && normalHourCandidates.length > 0 && !normalHourCandidates.some((scored) => isImaxFullEpicCandidate(scored.candidate));
 }
 
+/** Full Epic is allowed to take a longer trip for a better screen. That should
+ * never make the nearby, still-good screen disappear from the user's view.
+ * We surface one only when it saves a material 15+ minutes and remains an
+ * 80+ screen; a nearby standard 2D showing is not a meaningful rival here. */
+function fullEpicTradeoffOf(
+  winner: Scored,
+  eligible: Scored[],
+  timingByJourney: Map<string, PlanTimingBand>,
+  intentId: IntentId
+): RecommendationResult["fullEpicTradeoff"] {
+  if (intentId !== "full-epic" || !isImaxFullEpicCandidate(winner.candidate)) return undefined;
+
+  const alternatives = eligible.filter((candidate) => {
+    const timingBand = timingByJourney.get(journeyKeyOf(candidate.candidate));
+    const screenPointsGivenUp = winner.candidate.experienceScore - candidate.candidate.experienceScore;
+    const outboundMinutesSaved = winner.candidate.route.durationMinutes - candidate.candidate.route.durationMinutes;
+    return (
+      candidate.candidate.venue.id !== winner.candidate.venue.id &&
+      timingBand !== "outside-default" &&
+      candidate.candidate.experienceScore >= FULL_EPIC_LOCAL_ALTERNATIVE_MIN_SCREEN_SCORE &&
+      screenPointsGivenUp > 0 &&
+      outboundMinutesSaved >= FULL_EPIC_LOCAL_ALTERNATIVE_MIN_TRAVEL_SAVINGS
+    );
+  });
+  if (alternatives.length === 0) return undefined;
+
+  const alternative = [...alternatives].sort((a, b) => {
+    const screenDifference = b.candidate.experienceScore - a.candidate.experienceScore;
+    if (screenDifference !== 0) return screenDifference;
+    const travelDifference = a.candidate.route.durationMinutes - b.candidate.route.durationMinutes;
+    return travelDifference !== 0 ? travelDifference : stablePlanTieBreak(a, b);
+  })[0];
+
+  return {
+    venueName: alternative.candidate.venue.name,
+    locality: alternative.candidate.venue.locality,
+    formatChip: alternative.candidate.format,
+    showtime: alternative.candidate.show.time,
+    screenScore: alternative.candidate.experienceScore,
+    outboundDurationMinutes: alternative.candidate.route.durationMinutes,
+    screenPointsGivenUp: winner.candidate.experienceScore - alternative.candidate.experienceScore,
+    outboundMinutesSaved: winner.candidate.route.durationMinutes - alternative.candidate.route.durationMinutes,
+  };
+}
+
 function narrativePlanOf(scored: Scored): NarrativePlan & { showtime: string } {
   return {
     venueId: scored.candidate.venue.id,
@@ -1242,6 +1289,7 @@ export async function buildRecommendation(
     recommendationTimingBand,
     isFullEpicMorningImaxCompromise(intentId, recommendationTimingBand, eligible, timingByJourney)
   );
+  const fullEpicTradeoff = fullEpicTradeoffOf(winner, eligible, timingByJourney, intentId);
 
   const result: RecommendationResult = {
     intentLabel: intentWeights.label.toUpperCase(),
@@ -1279,6 +1327,7 @@ export async function buildRecommendation(
           returnEvidence: runnerUp.returnJourney.evidence,
         }
       : undefined,
+    fullEpicTradeoff,
     score: winner.score,
     screenScore: winner.candidate.experienceScore,
     screenProof: getScreenProof(winner.candidate.venue.id, winner.candidate.format),

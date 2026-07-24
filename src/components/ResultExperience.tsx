@@ -139,6 +139,8 @@ export function ResultExperience({
               <ScoreDimensions result={result} />
             </section>
 
+            {result.fullEpicTradeoff && <FullEpicTradeoff result={result} />}
+
             <section className="border-t border-border py-9 sm:py-11" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
               <div>
                 <h2 id="counterfactual-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
@@ -317,6 +319,41 @@ function ScoreDimensions({ result }: { result: RecommendationResult }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function FullEpicTradeoff({ result }: { result: RecommendationResult }) {
+  const tradeoff = result.fullEpicTradeoff!;
+  return (
+    <section className="border-t border-border py-9 sm:py-11" aria-labelledby="closer-screen-heading">
+      <p id="closer-screen-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
+        The closer screen
+      </p>
+      <div className="mt-5 grid gap-5 border-y border-border py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-8">
+        <div className="min-w-0">
+          <p className="font-display text-[1.5rem] leading-tight text-ink sm:text-[1.8rem]">{tradeoff.venueName}</p>
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">
+            {tradeoff.locality} <span aria-hidden="true">·</span> {tradeoff.formatChip} <span aria-hidden="true">·</span> {tradeoff.showtime}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-border border-x border-border text-center sm:min-w-[15.5rem]">
+          <TradeoffFact label="Screen" value={`${tradeoff.screenScore}/100`} />
+          <TradeoffFact label="Away" value={`${tradeoff.outboundDurationMinutes} min`} />
+        </div>
+      </div>
+      <p className="mt-4 font-mono text-[11px] uppercase leading-relaxed tracking-[0.06em] text-ink-muted">
+        Save {tradeoff.outboundMinutesSaved} min outbound. Give up {tradeoff.screenPointsGivenUp} screen points.
+      </p>
+    </section>
+  );
+}
+
+function TradeoffFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-3 py-1.5 sm:px-4">
+      <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-muted">{label}</p>
+      <p className="mt-1.5 font-mono text-[1.15rem] font-medium leading-none tabular-nums text-ink">{value}</p>
     </div>
   );
 }
