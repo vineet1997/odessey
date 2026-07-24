@@ -37,6 +37,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The scraper may run while a human deploy lands on main. Keep full
+          # history so its data-only commit can rebase onto that newer app
+          # commit instead of failing with a non-fast-forward push.
+          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -59,5 +64,18 @@ jobs:
             echo "No change in showtimes-live.json — nothing to commit."
           else
             git commit -m "chore: refresh District showtimes"
-            git push
+            # The scrape can take a few minutes. A product change may have
+            # reached main during that time, so rebase this data-only commit
+            # immediately before publishing it. Retry once more if a second
+            # push lands in the small fetch-to-push window.
+            for attempt in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              echo "Push raced with another main update (attempt $attempt); retrying."
+            done
+            echo "Could not publish the showtime refresh after three attempts."
+            exit 1
           fi
