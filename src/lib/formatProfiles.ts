@@ -119,7 +119,9 @@ export function getScreenProof(venueId: string, format: string): ScreenProof {
   return {
     imax: venueProof?.imax ?? (profile ? (profile.family === "imax" ? "confirmed" : "unavailable") : "unverified"),
     laser: venueProof?.laser ?? (profile?.laserConfirmed ? "confirmed" : "unverified"),
-    seventyMm: venueProof?.seventyMm ?? "unverified",
+    // Ithaka only recommends Delhi NCR screenings. India has no IMAX 70mm
+    // theatre, so this is a known absence—not missing venue-level research.
+    seventyMm: venueProof?.seventyMm ?? "unavailable",
   };
 }
 

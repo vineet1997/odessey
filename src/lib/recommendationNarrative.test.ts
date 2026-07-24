@@ -49,26 +49,26 @@ function plan(overrides: Partial<NarrativePlan> = {}): NarrativePlan {
 }
 
 describe("format-aware recommendation narrative", () => {
-  it("keeps screen proof exact and never turns missing evidence into a cross", () => {
+  it("keeps screen proof exact while marking 70mm as unavailable in India", () => {
     expect(getScreenProof("priya-vasant-vihar", "IMAX 2D")).toEqual({
       imax: "confirmed",
       laser: "confirmed",
-      seventyMm: "unverified",
+      seventyMm: "unavailable",
     });
     expect(getScreenProof("ambience-gurugram-kotak-imax", "IMAX 2D")).toEqual({
       imax: "confirmed",
       laser: "unverified",
-      seventyMm: "unverified",
+      seventyMm: "unavailable",
     });
     expect(getScreenProof("somewhere", "LASER 2D")).toEqual({
       imax: "unavailable",
       laser: "confirmed",
-      seventyMm: "unverified",
+      seventyMm: "unavailable",
     });
     expect(getScreenProof("somewhere", "UNMAPPED FORMAT")).toEqual({
       imax: "unverified",
       laser: "unverified",
-      seventyMm: "unverified",
+      seventyMm: "unavailable",
     });
   });
 

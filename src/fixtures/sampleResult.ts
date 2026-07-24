@@ -164,7 +164,7 @@ export const sampleResult: RecommendationResult = {
   screenProof: {
     imax: "confirmed",
     laser: "unverified",
-    seventyMm: "unverified",
+    seventyMm: "unavailable",
   },
   counterfactuals: [
     {

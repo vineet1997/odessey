@@ -60,6 +60,7 @@ export function ResultExperience({
   onStartOver,
 }: ResultExperienceProps) {
   const [shareOpen, setShareOpen] = useState(false);
+  const [planControlsOpen, setPlanControlsOpen] = useState(Boolean(constraintReason));
   const timeline = makeTimeline(result);
   const counterfactuals = makeCounterfactuals(result);
   const returnTone = returnStatusTone(result.journey.return.status);
@@ -115,7 +116,21 @@ export function ResultExperience({
             </div>
 
             <section aria-labelledby="evening-heading" className="border-t border-border py-7 sm:py-8" data-testid="evening-timeline">
-              <p id="evening-heading" className="mb-7 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Proposed plan</p>
+              <div className="mb-7 flex items-center justify-between gap-5">
+                <div className="flex items-center gap-3">
+                  <span aria-hidden="true" className="h-px w-8 bg-gold-bright" />
+                  <p id="evening-heading" className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gold-bright">Proposed plan</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPlanControlsOpen((open) => !open)}
+                  aria-expanded={planControlsOpen}
+                  aria-controls="plan-constraints"
+                  className="px-1 py-2 font-mono text-[10px] uppercase tracking-[0.11em] text-ink-muted transition-colors hover:text-gold-bright"
+                >
+                  {planControlsOpen ? "Close" : "Adjust plan"}
+                </button>
+              </div>
               {result.timing.notice && (
                 <p className="-mt-3 mb-6 max-w-[42rem] font-body text-[14px] italic leading-relaxed text-ink-muted">
                   {result.timing.notice}
@@ -129,13 +144,13 @@ export function ResultExperience({
                 <TimelineStop time={timeline.homeAt} label="Home" returnTone={returnTone} />
               </ol>
               <RouteDecisionModule result={result} heading={returnCopy.heading} detail={returnCopy.detail} />
+              <ProgressiveControls
+                open={planControlsOpen}
+                preferences={preferences}
+                onChange={onChangePreferences}
+                constraintReason={constraintReason}
+              />
             </section>
-
-            <ProgressiveControls
-              preferences={preferences}
-              onChange={onChangePreferences}
-              constraintReason={constraintReason}
-            />
 
             <section className="border-t border-border py-9 sm:py-11" aria-labelledby="why-heading">
               <div className="mb-7 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -289,43 +304,30 @@ function RouteDecisionModule({
 }
 
 function ProgressiveControls({
+  open,
   preferences,
   onChange,
   constraintReason,
 }: {
+  open: boolean;
   preferences: RecommendationPreferences;
   onChange: (preferences: RecommendationPreferences) => void;
   constraintReason: string | null;
 }) {
-  const [open, setOpen] = useState(false);
   const update = (change: Partial<RecommendationPreferences>) => onChange({ ...preferences, ...change });
-  const hasConstraint = Boolean(preferences.allowMorningShows || preferences.returnMode === "metro-only" || preferences.homeBy);
+
+  if (!open && !constraintReason) return null;
 
   return (
-    <section className="border-t border-border py-7 sm:py-8" aria-labelledby="constraint-controls-heading">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p id="constraint-controls-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">One more thing?</p>
-          <p className="mt-2 font-body text-[14px] leading-relaxed text-ink-muted">Add a real constraint only if tonight needs one.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-          className="border border-border px-4 py-3 font-mono text-[10px] uppercase tracking-[0.11em] text-ink transition-colors hover:border-gold-bright hover:text-gold-bright"
-        >
-          {open ? "Close" : hasConstraint ? "Adjust constraints" : "Adjust the plan"}
-        </button>
-      </div>
-
+    <div id="plan-constraints" className="mt-6 border-t border-border pt-6">
       {constraintReason && (
-        <p role="alert" className="mt-5 border-l-2 border-wine px-4 font-body text-[14px] leading-relaxed text-ink-muted">
+        <p role="alert" className="border-l-2 border-wine px-4 font-body text-[14px] leading-relaxed text-ink-muted">
           {constraintReason}
         </p>
       )}
 
       {open && (
-        <div className="mt-6 grid gap-px border border-border bg-border sm:grid-cols-3">
+        <div className={`${constraintReason ? "mt-6 " : ""}grid gap-px border border-border bg-border sm:grid-cols-3`}>
           <ConstraintButton
             label="Morning shows"
             value="I’m okay with them"
@@ -355,7 +357,7 @@ function ProgressiveControls({
           </label>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
