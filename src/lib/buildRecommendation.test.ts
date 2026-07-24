@@ -4,9 +4,11 @@ import {
   buildEveningTimeline,
   departureTimeForShow,
   filterMakeableShows,
+  fullEpicScreenTier,
   isFourDxFormat,
   isTimelyMetroDeparture,
   isoDateOf,
+  outboundDepartureTimeForShow,
   resolveExperienceScore,
   timingBandForShow,
   viableShowsForRoute,
@@ -64,6 +66,14 @@ describe("departureTimeForShow", () => {
   });
 });
 
+describe("outboundDepartureTimeForShow", () => {
+  it("asks for traffic at the planned leave-home time, not request time", () => {
+    expect(outboundDepartureTimeForShow(show({ date: "2026-07-22", time: "7:00 PM" }), 35)).toBe(
+      "2026-07-22T12:40:00.000Z"
+    );
+  });
+});
+
 describe("isTimelyMetroDeparture", () => {
   it("accepts a metro departure that follows theatre exit within the policy window", () => {
     expect(isTimelyMetroDeparture("2026-07-22T21:07:00.000Z", "2026-07-22T21:42:00.000Z")).toBe(true);
@@ -77,20 +87,31 @@ describe("isTimelyMetroDeparture", () => {
 });
 
 describe("timingBandForShow", () => {
-  it("keeps a before-sunrise departure out of the default recommendation pool", () => {
+  it("keeps a pre-9 AM screening out of the default recommendation pool", () => {
     expect(timingBandForShow(show({ time: "6:30 AM" }), 35)).toBe("outside-default");
   });
 
-  it("treats a morning departure as an edge case rather than the default answer", () => {
+  it("treats a 9 AM to noon screening as an edge case rather than the default answer", () => {
     expect(timingBandForShow(show({ time: "9:30 AM" }), 20)).toBe("edge");
+    expect(timingBandForShow(show({ time: "11:00 AM" }), 0)).toBe("edge");
   });
 
-  it("accepts an ordinary late-morning screening as a normal plan", () => {
-    expect(timingBandForShow(show({ time: "11:00 AM" }), 35)).toBe("normal");
+  it("accepts noon through 1 AM as the normal cinema window", () => {
+    expect(timingBandForShow(show({ time: "12:00 PM" }), 35)).toBe("normal");
+    expect(timingBandForShow(show({ time: "11:00 PM" }), 10)).toBe("normal");
+    expect(timingBandForShow(show({ time: "1:00 AM" }), 10)).toBe("normal");
   });
 
-  it("marks an 11 PM start as an edge case even for a nearby venue", () => {
-    expect(timingBandForShow(show({ time: "11:00 PM" }), 10)).toBe("edge");
+  it("keeps a post-1 AM screening outside the default window", () => {
+    expect(timingBandForShow(show({ time: "1:15 AM" }), 10)).toBe("outside-default");
+  });
+});
+
+describe("fullEpicScreenTier", () => {
+  it("uses exact venue-format evidence when distinguishing laser IMAX from standard IMAX", () => {
+    expect(fullEpicScreenTier("priya-vasant-vihar", "IMAX 2D")).toBe("laser-imax");
+    expect(fullEpicScreenTier("mall-of-india-noida", "IMAX 2D")).toBe("imax");
+    expect(fullEpicScreenTier("new-us-cinemas-ghaziabad", "4K DOLBY 2D")).toBe("other");
   });
 });
 

@@ -159,7 +159,12 @@ async function callGoogleRoutes(
           location: { latLng: { latitude: destination.lat, longitude: destination.lng } },
         },
         travelMode: mode,
-        ...(mode === "DRIVE" ? { routingPreference: "TRAFFIC_AWARE" } : {}),
+        ...(mode === "DRIVE"
+          ? {
+              routingPreference: "TRAFFIC_AWARE",
+              ...(departureTime ? { departureTime } : {}),
+            }
+          : {}),
         ...(mode === "TRANSIT"
           ? {
               ...(departureTime ? { departureTime } : {}),

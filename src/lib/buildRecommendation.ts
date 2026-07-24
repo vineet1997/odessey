@@ -55,13 +55,13 @@ import type {
 
 const FILM_RUNTIME_MINUTES = 172; // BRIEF.md — The Odyssey's runtime
 const THEATRE_EXIT_BUFFER_MINUTES = 15;
-const TRANSIT_FINALIST_LIMIT = 12;
+const TRAFFIC_FORECAST_FINALIST_LIMIT = 6;
 const TRANSIT_FARE_FALLBACK_RUPEES = 60;
 export const MAX_METRO_DEPARTURE_DELAY_MINUTES = 45;
-const OUTSIDE_DEFAULT_EARLIEST_LEAVE_MINUTES = 7 * 60;
-const EDGE_DEFAULT_EARLIEST_LEAVE_MINUTES = 9 * 60;
-const EDGE_DEFAULT_EARLIEST_SHOW_MINUTES = 10 * 60;
-const EDGE_DEFAULT_LATEST_SHOW_MINUTES = 23 * 60;
+const MORNING_EDGE_START_MINUTES = 9 * 60;
+const NORMAL_SHOW_START_MINUTES = 12 * 60;
+const NORMAL_SHOW_END_MINUTES = 1 * 60;
+const LASER_IMAX_MAX_EXTRA_OUTBOUND_MINUTES = 30;
 
 // Uncalibrated placeholder — see module doc comment #1.
 const CAB_BASE_FARE_RUPEES = 60;
@@ -138,6 +138,7 @@ interface ResolvedRoute {
   source: "live" | "estimated";
   durationMinutes: number;
   distanceKm: number;
+  forecastFor?: string;
 }
 
 type ReturnEvidence = ReturnEvidenceStatus;
@@ -264,6 +265,18 @@ export function departureTimeForShow(show: Pick<Show, "date" | "time">): string 
   return new Date(midnightIst.getTime() + departureMinutes * 60_000).toISOString();
 }
 
+/** A first-pass route duration tells us when the user would leave. The
+ * finalist pass then asks Google to forecast traffic for that actual moment. */
+export function outboundDepartureTimeForShow(
+  show: Pick<Show, "date" | "time">,
+  outboundDurationMinutes: number
+): string {
+  const midnightIst = new Date(`${show.date}T00:00:00+05:30`);
+  const leaveMinutes =
+    parseTimeToMinutes(show.time) - outboundDurationMinutes - MAKEABLE_ROUTE_BUFFER_MINUTES;
+  return new Date(midnightIst.getTime() + leaveMinutes * 60_000).toISOString();
+}
+
 /** A returned route can be technically valid but start after morning service
  * resumes. A metro departure must be part of the same night to be usable. */
 export function isTimelyMetroDeparture(theatreExitTime: string, metroDepartureTime: string): boolean {
@@ -289,13 +302,16 @@ function formatTransitTime(iso: string): string {
 
 async function fetchRoute(
   origin: { lat: number; lng: number },
-  destination: { lat: number; lng: number }
+  destination: { lat: number; lng: number },
+  departureTime?: string
 ): Promise<ResolvedRoute | null> {
+  const requestedDeparture =
+    departureTime && Date.parse(departureTime) > Date.now() ? departureTime : undefined;
   try {
     const res = await fetch("/api/route", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, mode: "DRIVE" }),
+      body: JSON.stringify({ origin, destination, mode: "DRIVE", ...(requestedDeparture ? { departureTime: requestedDeparture } : {}) }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as RouteApiResponse;
@@ -306,7 +322,12 @@ async function fetchRoute(
     ) {
       return null;
     }
-    return { source: data.source, durationMinutes: data.durationMinutes, distanceKm: data.distanceKm };
+    return {
+      source: data.source,
+      durationMinutes: data.durationMinutes,
+      distanceKm: data.distanceKm,
+      ...(requestedDeparture ? { forecastFor: requestedDeparture } : {}),
+    };
   } catch {
     return null; // network error — this venue just gets excluded, not guessed
   }
@@ -472,30 +493,27 @@ export function viableShowsForRoute(
   return shows.filter((show) => parseTimeToMinutes(show.time) >= cutoff);
 }
 
-/** The app has no explicit time preference yet, so it uses a conservative
- * default: a recommendation should not ask someone to leave before sunrise
- * merely because that screening is cheap. These bands affect selection only;
- * every scored plan remains visible in research. */
+/** The first preference is deliberately simple and human: screen *start* time
+ * matters more than the calculated leave-home time. A 10 AM show is a morning
+ * compromise even for someone five minutes away; noon through 1 AM is the
+ * ordinary cinema window. These bands affect selection only; every scored plan
+ * remains visible in research. */
 export function timingBandForShow(
   show: Pick<Show, "time">,
-  outboundDurationMinutes: number
+  _outboundDurationMinutes: number
 ): PlanTimingBand {
   const showStartMinutes = parseTimeToMinutes(show.time);
-  const leaveHomeMinutes = showStartMinutes - outboundDurationMinutes - MAKEABLE_ROUTE_BUFFER_MINUTES;
 
-  if (leaveHomeMinutes < OUTSIDE_DEFAULT_EARLIEST_LEAVE_MINUTES) return "outside-default";
-  if (
-    leaveHomeMinutes < EDGE_DEFAULT_EARLIEST_LEAVE_MINUTES ||
-    showStartMinutes < EDGE_DEFAULT_EARLIEST_SHOW_MINUTES ||
-    showStartMinutes >= EDGE_DEFAULT_LATEST_SHOW_MINUTES
-  ) {
-    return "edge";
-  }
-  return "normal";
+  if (showStartMinutes >= NORMAL_SHOW_START_MINUTES || showStartMinutes <= NORMAL_SHOW_END_MINUTES) return "normal";
+  if (showStartMinutes >= MORNING_EDGE_START_MINUTES) return "edge";
+  return "outside-default";
 }
 
-function timingFallbackNotice(band: PlanTimingBand): string | undefined {
-  if (band === "edge") return "No normal-hours plan made the cut. This is the least unusual option.";
+function timingFallbackNotice(band: PlanTimingBand, isFullEpicMorningImaxCompromise: boolean): string | undefined {
+  if (isFullEpicMorningImaxCompromise) {
+    return "Morning IMAX is the Full Epic compromise. Normal-hour plans use lesser screens.";
+  }
+  if (band === "edge") return "No noon-or-later plan made the cut. This is the strongest morning option.";
   if (band === "outside-default") return "Only before- or after-hours plans made the cut.";
   return undefined;
 }
@@ -607,6 +625,88 @@ interface Scored {
   returnJourney: ReturnJourney;
   showEndMinutes: number;
   score: ScoreResult;
+}
+
+export type FullEpicScreenTier = "laser-imax" | "imax" | "other";
+
+/** Full Epic only makes a stronger screen claim when the exact venue + format
+ * evidence supports it. A generic laser auditorium is not silently treated as
+ * IMAX, and a generic IMAX label is not silently treated as laser. */
+export function fullEpicScreenTier(venueId: string, format: string): FullEpicScreenTier {
+  const proof = getScreenProof(venueId, format);
+  if (proof.imax === "confirmed" && proof.laser === "confirmed") return "laser-imax";
+  if (proof.imax === "confirmed") return "imax";
+  return "other";
+}
+
+function isImaxFullEpicCandidate(candidate: FinalCandidate): boolean {
+  return fullEpicScreenTier(candidate.venue.id, candidate.format) !== "other";
+}
+
+/** Time is normally the first gate. Full Epic has one intentional exception:
+ * a morning IMAX is more faithful to the stated lens than a normal-hour
+ * non-IMAX screen. It remains visibly labelled as a compromise in the result. */
+function selectRecommendationTimingBand(
+  candidates: FinalCandidate[],
+  intentId: IntentId,
+  timingByJourney: Map<string, PlanTimingBand>
+): PlanTimingBand {
+  const inBand = (band: PlanTimingBand) =>
+    candidates.filter((candidate) => timingByJourney.get(journeyKeyOf(candidate)) === band);
+  const normal = inBand("normal");
+  const edge = inBand("edge");
+
+  if (intentId === "full-epic") {
+    const normalHasImax = normal.some(isImaxFullEpicCandidate);
+    const edgeHasImax = edge.some(isImaxFullEpicCandidate);
+    if (edgeHasImax && !normalHasImax) return "edge";
+  }
+
+  if (normal.length > 0) return "normal";
+  if (edge.length > 0) return "edge";
+  return "outside-default";
+}
+
+/** Once the time policy has selected a Full Epic cohort, choose Laser IMAX if
+ * it is no more than 30 extra outbound minutes beyond the closest standard
+ * IMAX. Beyond that, the standard IMAX is the better travel compromise. */
+function applyFullEpicScreenPolicy(pool: Scored[]): Scored[] {
+  const laserImax = pool.filter(
+    (scored) => fullEpicScreenTier(scored.candidate.venue.id, scored.candidate.format) === "laser-imax"
+  );
+  const standardImax = pool.filter(
+    (scored) => fullEpicScreenTier(scored.candidate.venue.id, scored.candidate.format) === "imax"
+  );
+
+  if (laserImax.length === 0) return standardImax.length > 0 ? standardImax : pool;
+  if (standardImax.length === 0) return laserImax;
+
+  const closestStandardImaxMinutes = Math.min(
+    ...standardImax.map((scored) => scored.candidate.route.durationMinutes)
+  );
+  const reachableLaserImax = laserImax.filter(
+    (scored) =>
+      scored.candidate.route.durationMinutes <=
+      closestStandardImaxMinutes + LASER_IMAX_MAX_EXTRA_OUTBOUND_MINUTES
+  );
+  return reachableLaserImax.length > 0 ? reachableLaserImax : standardImax;
+}
+
+function isFullEpicMorningImaxCompromise(
+  intentId: IntentId,
+  selectedBand: PlanTimingBand,
+  eligible: Scored[],
+  timingByJourney: Map<string, PlanTimingBand>
+): boolean {
+  if (intentId !== "full-epic" || selectedBand !== "edge") return false;
+  const hasMorningImax = eligible.some(
+    (scored) =>
+      timingByJourney.get(journeyKeyOf(scored.candidate)) === "edge" && isImaxFullEpicCandidate(scored.candidate)
+  );
+  const normalHourCandidates = eligible.filter(
+    (scored) => timingByJourney.get(journeyKeyOf(scored.candidate)) === "normal"
+  );
+  return hasMorningImax && normalHourCandidates.length > 0 && !normalHourCandidates.some((scored) => isImaxFullEpicCandidate(scored.candidate));
 }
 
 function narrativePlanOf(scored: Scored): NarrativePlan & { showtime: string } {
@@ -931,11 +1031,11 @@ export async function buildRecommendation(
       timingBandForShow(candidate.show, candidate.route.durationMinutes)
     );
   }
-  const recommendationTimingBand: PlanTimingBand = [...timingByJourney.values()].includes("normal")
-    ? "normal"
-    : [...timingByJourney.values()].includes("edge")
-      ? "edge"
-      : "outside-default";
+  let recommendationTimingBand = selectRecommendationTimingBand(
+    nonFourDxCandidates,
+    intentId,
+    timingByJourney
+  );
 
   // --- Score every viable show plan with a conservative cab-home fallback.
   //     Then spend live transit calls only on the plans with the strongest
@@ -943,7 +1043,7 @@ export async function buildRecommendation(
   //     before scoring, and the bounded shortlist is based on score potential
   //     rather than one preselected show per venue/format. ---
   const intentWeights = INTENTS[intentId];
-  const fallbackScored = finalCandidates.map((candidate) => {
+  const preliminaryScored = finalCandidates.map((candidate) => {
     const cabFare = estimateCabFare(candidate.route.distanceKm, "fallback scoring").amountRupees;
     return scoreCandidateWithReturn(
       candidate,
@@ -960,7 +1060,7 @@ export async function buildRecommendation(
   });
 
   const finalistPotential = new Map<string, { candidate: FinalCandidate; optimisticScore: number }>();
-  for (const fallback of fallbackScored) {
+  for (const fallback of preliminaryScored) {
     if (isFourDxFormat(fallback.candidate.format)) continue;
     if (timingByJourney.get(journeyKeyOf(fallback.candidate)) !== recommendationTimingBand) continue;
     const optimistic = scoreCandidateWithReturn(
@@ -984,21 +1084,73 @@ export async function buildRecommendation(
     }
   }
 
-  const transitFinalists = [...finalistPotential.entries()]
+  const trafficFinalists = [...finalistPotential.entries()]
     .sort((a, b) => b[1].optimisticScore - a[1].optimisticScore)
-    .slice(0, TRANSIT_FINALIST_LIMIT);
+    .slice(0, TRAFFIC_FORECAST_FINALIST_LIMIT);
+  // A route for "now" is enough to shortlist. These finalists are then
+  // forecast at the time the person would actually leave, and back again at
+  // theatre exit. This keeps Google usage bounded while making the winner's
+  // Delhi traffic estimates time-specific.
+  const trafficForecasts = await Promise.all(
+    trafficFinalists.map(async ([key, { candidate }]) => {
+      const [outbound, cabHomeRoute] = await Promise.all([
+        fetchRoute(
+          origin,
+          candidate.coords,
+          outboundDepartureTimeForShow(candidate.show, candidate.route.durationMinutes)
+        ),
+        fetchRoute(candidate.coords, origin, departureTimeForShow(candidate.show)),
+      ]);
+      const forecastCandidate = outbound ? { ...candidate, route: outbound } : candidate;
+      return { key, candidate: forecastCandidate, cabHomeRoute: cabHomeRoute ?? forecastCandidate.route };
+    })
+  );
+  const forecastCandidateByJourney = new Map(trafficForecasts.map((forecast) => [forecast.key, forecast.candidate]));
+  const cabHomeRouteByJourney = new Map(trafficForecasts.map((forecast) => [forecast.key, forecast.cabHomeRoute]));
+
+  for (const [key, candidate] of forecastCandidateByJourney) {
+    if (!isFourDxFormat(candidate.format)) {
+      timingByJourney.set(key, timingBandForShow(candidate.show, candidate.route.durationMinutes));
+    }
+  }
+  recommendationTimingBand = selectRecommendationTimingBand(
+    nonFourDxCandidates,
+    intentId,
+    timingByJourney
+  );
+
+  const fallbackScored = finalCandidates.map((candidate) => {
+    const key = journeyKeyOf(candidate);
+    const forecastCandidate = forecastCandidateByJourney.get(key) ?? candidate;
+    const cabHomeRoute = cabHomeRouteByJourney.get(key) ?? forecastCandidate.route;
+    const cabFare = estimateCabFare(cabHomeRoute.distanceKm, "forecast return-home fallback").amountRupees;
+    return scoreCandidateWithReturn(
+      forecastCandidate,
+      {
+        evidence: "unverified",
+        durationMinutes: cabHomeRoute.durationMinutes,
+        costRupees: cabFare,
+        costIsEstimate: true,
+        cabEstimateAvailable: cabFare > 0,
+        fallbackReason: "lookup-unavailable",
+      },
+      intentWeights
+    );
+  });
+
   const transitResults = await Promise.all(
-    transitFinalists.map(([, { candidate }]) =>
-      fetchTransitHome(
-        candidate.coords,
+    trafficFinalists.map(([key, { candidate }]) => {
+      const forecastCandidate = forecastCandidateByJourney.get(key) ?? candidate;
+      return fetchTransitHome(
+        forecastCandidate.coords,
         origin,
-        departureTimeForShow(candidate.show),
-        candidate.route
-      )
-    )
+        departureTimeForShow(forecastCandidate.show),
+        cabHomeRouteByJourney.get(key) ?? forecastCandidate.route
+      );
+    })
   );
   const transitByJourney = new Map<string, ReturnJourney>();
-  transitFinalists.forEach(([key], index) => transitByJourney.set(key, transitResults[index]));
+  trafficFinalists.forEach(([key], index) => transitByJourney.set(key, transitResults[index]));
 
   const scored: Scored[] = fallbackScored.map((fallback) => {
     const transit = transitByJourney.get(journeyKeyOf(fallback.candidate));
@@ -1012,12 +1164,14 @@ export async function buildRecommendation(
   if (eligible.length === 0) {
     return { ok: false, reason: "Only 4DX showtimes turned up for this window — try a different one." };
   }
-  const recommendationPool = eligible.filter(
+  const timingRecommendationPool = eligible.filter(
     (candidate) => timingByJourney.get(journeyKeyOf(candidate.candidate)) === recommendationTimingBand
   );
-  if (recommendationPool.length === 0) {
+  if (timingRecommendationPool.length === 0) {
     return { ok: false, reason: "No normal-hours plan could be assembled for this window. Try another day." };
   }
+  const recommendationPool =
+    intentId === "full-epic" ? applyFullEpicScreenPolicy(timingRecommendationPool) : timingRecommendationPool;
   recommendationPool.sort((a, b) => b.score.totalScore - a.score.totalScore);
 
   const winner = recommendationPool[0];
@@ -1084,6 +1238,10 @@ export async function buildRecommendation(
     intentWeights,
     new Set(recommendationPool.map((candidate) => candidate.candidate.venue.id)).size
   );
+  const timingNotice = timingFallbackNotice(
+    recommendationTimingBand,
+    isFullEpicMorningImaxCompromise(intentId, recommendationTimingBand, eligible, timingByJourney)
+  );
 
   const result: RecommendationResult = {
     intentLabel: intentWeights.label.toUpperCase(),
@@ -1097,9 +1255,7 @@ export async function buildRecommendation(
     priceLabel: `₹${winner.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
     timing: {
       band: recommendationTimingBand,
-      ...(timingFallbackNotice(recommendationTimingBand)
-        ? { notice: timingFallbackNotice(recommendationTimingBand) }
-        : {}),
+      ...(timingNotice ? { notice: timingNotice } : {}),
     },
     journey: {
       outbound,
@@ -1138,7 +1294,7 @@ export async function buildRecommendation(
       showsConsidered: showsConsideredTotal,
       plansScored: scored.length,
       routeSource,
-      transitPlansChecked: transitFinalists.length,
+      transitPlansChecked: trafficFinalists.length,
       returnEvidence: winner.returnJourney.evidence,
     },
   };
