@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { buildRecommendation, type DossierEntry } from "../lib/buildRecommendation";
+import { buildRecommendation, type DossierEntry, type RecommendationPreferences } from "../lib/buildRecommendation";
 import type { Origin, WhenChoice } from "./helm/types";
 import type { IntentId } from "../scoring/score";
 import type { RecommendationResult } from "../types/recommendation";
@@ -9,6 +9,7 @@ interface CrossingProps {
   origin: Origin;
   when: WhenChoice;
   intentId: IntentId;
+  preferences?: RecommendationPreferences;
   /** Fires once a real recommendation is computed. dossier is every scored
    * candidate (not just the winner/runner-up) — the data the explore map draws from. */
   onComplete: (result: RecommendationResult, dossier: DossierEntry[]) => void;
@@ -58,7 +59,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T): Pr
  * pass wires in real data, those steps now correspond to real work: reading
  * venue/showtime data and calling the live routing proxy per candidate venue.
  */
-export function Crossing({ origin, when, intentId, onComplete, onError }: CrossingProps) {
+export function Crossing({ origin, when, intentId, preferences, onComplete, onError }: CrossingProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const pathRef = useRef<SVGPathElement>(null);
   const [reduceMotion] = useState(
@@ -77,7 +78,7 @@ export function Crossing({ origin, when, intentId, onComplete, onError }: Crossi
     const minVisualWait = new Promise<void>((resolve) => setTimeout(resolve, MIN_VISUAL_DURATION_MS));
 
     const computation = withTimeout(
-      buildRecommendation(origin, when, intentId),
+      buildRecommendation(origin, when, intentId, preferences),
       FETCH_TIMEOUT_MS,
       () => ({ ok: false as const, reason: "Taking too long to check live travel times. Try again." })
     );
@@ -96,7 +97,7 @@ export function Crossing({ origin, when, intentId, onComplete, onError }: Crossi
       window.clearInterval(stepTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, when, intentId]);
+  }, [origin, when, intentId, preferences]);
 
   useEffect(() => {
     if (reduceMotion) return; // plain ticking log only, no line-draw motion

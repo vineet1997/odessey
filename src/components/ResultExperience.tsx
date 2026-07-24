@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { ExternalLink, MapPinned, Share2 } from "lucide-react";
 import { Dossier } from "./Dossier";
 import type { Origin } from "./helm/types";
-import type { DossierEntry } from "../lib/buildRecommendation";
+import type { DossierEntry, RecommendationPreferences } from "../lib/buildRecommendation";
 import type { IntentId } from "../scoring/score";
 import type { ProofStatus, RecommendationResult, ReturnStatus } from "../types/recommendation";
 import { buildShareArtifactModel } from "../lib/shareArtifact";
@@ -37,6 +37,9 @@ interface ResultExperienceProps {
   origin: Origin;
   activeIntent: IntentId;
   onSwitchIntent: (intent: IntentId) => void;
+  preferences: RecommendationPreferences;
+  onChangePreferences: (preferences: RecommendationPreferences) => void;
+  constraintReason: string | null;
   onStartOver: () => void;
 }
 
@@ -51,6 +54,9 @@ export function ResultExperience({
   origin,
   activeIntent,
   onSwitchIntent,
+  preferences,
+  onChangePreferences,
+  constraintReason,
   onStartOver,
 }: ResultExperienceProps) {
   const [shareOpen, setShareOpen] = useState(false);
@@ -124,6 +130,12 @@ export function ResultExperience({
               </ol>
               <RouteDecisionModule result={result} heading={returnCopy.heading} detail={returnCopy.detail} />
             </section>
+
+            <ProgressiveControls
+              preferences={preferences}
+              onChange={onChangePreferences}
+              constraintReason={constraintReason}
+            />
 
             <section className="border-t border-border py-9 sm:py-11" aria-labelledby="why-heading">
               <div className="mb-7 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -273,6 +285,101 @@ function RouteDecisionModule({
         {detail}
       </p>
     </aside>
+  );
+}
+
+function ProgressiveControls({
+  preferences,
+  onChange,
+  constraintReason,
+}: {
+  preferences: RecommendationPreferences;
+  onChange: (preferences: RecommendationPreferences) => void;
+  constraintReason: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const update = (change: Partial<RecommendationPreferences>) => onChange({ ...preferences, ...change });
+  const hasConstraint = Boolean(preferences.allowMorningShows || preferences.returnMode === "metro-only" || preferences.homeBy);
+
+  return (
+    <section className="border-t border-border py-7 sm:py-8" aria-labelledby="constraint-controls-heading">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p id="constraint-controls-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">One more thing?</p>
+          <p className="mt-2 font-body text-[14px] leading-relaxed text-ink-muted">Add a real constraint only if tonight needs one.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          className="border border-border px-4 py-3 font-mono text-[10px] uppercase tracking-[0.11em] text-ink transition-colors hover:border-gold-bright hover:text-gold-bright"
+        >
+          {open ? "Close" : hasConstraint ? "Adjust constraints" : "Adjust the plan"}
+        </button>
+      </div>
+
+      {constraintReason && (
+        <p role="alert" className="mt-5 border-l-2 border-wine px-4 font-body text-[14px] leading-relaxed text-ink-muted">
+          {constraintReason}
+        </p>
+      )}
+
+      {open && (
+        <div className="mt-6 grid gap-px border border-border bg-border sm:grid-cols-3">
+          <ConstraintButton
+            label="Morning shows"
+            value="I’m okay with them"
+            active={Boolean(preferences.allowMorningShows)}
+            onClick={() => update({ allowMorningShows: !preferences.allowMorningShows })}
+          />
+          <ConstraintButton
+            label="Journey home"
+            value={preferences.returnMode === "metro-only" ? "Metro only" : "Cab okay"}
+            active={preferences.returnMode === "metro-only"}
+            onClick={() => update({ returnMode: preferences.returnMode === "metro-only" ? "cab-ok" : "metro-only" })}
+          />
+          <label className="block bg-bg p-5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted">Need to be home by</span>
+            <select
+              aria-label="Need to be home by"
+              value={preferences.homeBy ?? ""}
+              onChange={(event) => update({ homeBy: event.target.value || undefined })}
+              className="mt-4 w-full appearance-none bg-transparent font-mono text-[13px] font-medium uppercase tracking-[0.06em] text-ink outline-none"
+            >
+              <option value="">No deadline</option>
+              <option value="22:30">10:30 PM</option>
+              <option value="23:30">11:30 PM</option>
+              <option value="00:30">12:30 AM</option>
+              <option value="01:30">1:30 AM</option>
+            </select>
+          </label>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ConstraintButton({
+  label,
+  value,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-h-[8.55rem] bg-bg p-5 text-left transition-colors hover:bg-[var(--result-panel-soft)] ${active ? "border-t-2 border-gold-bright" : ""}`}
+    >
+      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted">{label}</span>
+      <span className={`mt-4 block font-body text-[1.15rem] leading-tight ${active ? "text-gold-bright" : "text-ink"}`}>{value}</span>
+    </button>
   );
 }
 

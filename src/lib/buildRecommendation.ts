@@ -56,6 +56,7 @@ import type {
 const FILM_RUNTIME_MINUTES = 172; // BRIEF.md — The Odyssey's runtime
 const THEATRE_EXIT_BUFFER_MINUTES = 15;
 const TRAFFIC_FORECAST_FINALIST_LIMIT = 6;
+const METRO_ONLY_TRANSIT_FINALIST_LIMIT = 12;
 const TRANSIT_FARE_FALLBACK_RUPEES = 60;
 export const MAX_METRO_DEPARTURE_DELAY_MINUTES = 45;
 const MORNING_EDGE_START_MINUTES = 9 * 60;
@@ -266,6 +267,21 @@ export function departureTimeForShow(show: Pick<Show, "date" | "time">): string 
     parseTimeToMinutes(show.time) + FILM_RUNTIME_MINUTES + THEATRE_EXIT_BUFFER_MINUTES;
   return new Date(midnightIst.getTime() + departureMinutes * 60_000).toISOString();
 }
+
+/** Optional constraints chosen after the first answer. They are intentionally
+ * not collected in the Helm: the first recommendation shows what Ithaka would
+ * do without a profile, then a person can state the constraint that matters. */
+export interface RecommendationPreferences {
+  allowMorningShows?: boolean;
+  returnMode?: "cab-ok" | "metro-only";
+  /** Local 24-hour clock time, e.g. "23:30". Absent means no home deadline. */
+  homeBy?: string;
+}
+
+export const DEFAULT_RECOMMENDATION_PREFERENCES: RecommendationPreferences = {
+  allowMorningShows: false,
+  returnMode: "cab-ok",
+};
 
 /** A first-pass route duration tells us when the user would leave. The
  * finalist pass then asks Google to forecast traffic for that actual moment. */
@@ -648,25 +664,30 @@ function isImaxFullEpicCandidate(candidate: FinalCandidate): boolean {
 /** Time is normally the first gate. Full Epic has one intentional exception:
  * a morning IMAX is more faithful to the stated lens than a normal-hour
  * non-IMAX screen. It remains visibly labelled as a compromise in the result. */
-function selectRecommendationTimingBand(
+function selectRecommendationTimingBands(
   candidates: FinalCandidate[],
   intentId: IntentId,
-  timingByJourney: Map<string, PlanTimingBand>
-): PlanTimingBand {
+  timingByJourney: Map<string, PlanTimingBand>,
+  preferences: RecommendationPreferences
+): Set<PlanTimingBand> {
   const inBand = (band: PlanTimingBand) =>
     candidates.filter((candidate) => timingByJourney.get(journeyKeyOf(candidate)) === band);
   const normal = inBand("normal");
   const edge = inBand("edge");
 
+  if (preferences.allowMorningShows && (normal.length > 0 || edge.length > 0)) {
+    return new Set([...(normal.length > 0 ? ["normal" as const] : []), ...(edge.length > 0 ? ["edge" as const] : [])]);
+  }
+
   if (intentId === "full-epic") {
     const normalHasImax = normal.some(isImaxFullEpicCandidate);
     const edgeHasImax = edge.some(isImaxFullEpicCandidate);
-    if (edgeHasImax && !normalHasImax) return "edge";
+    if (edgeHasImax && !normalHasImax) return new Set(["edge"]);
   }
 
-  if (normal.length > 0) return "normal";
-  if (edge.length > 0) return "edge";
-  return "outside-default";
+  if (normal.length > 0) return new Set(["normal"]);
+  if (edge.length > 0) return new Set(["edge"]);
+  return new Set(["outside-default"]);
 }
 
 /** Once the time policy has selected a Full Epic cohort, choose Laser IMAX if
@@ -863,6 +884,29 @@ function projectedHomeArrival(scored: Scored): Date {
   return new Date(returnDeparture.getTime() + scored.returnJourney.durationMinutes * 60_000);
 }
 
+/** A bedtime preference is interpreted as the next occurrence after a
+ * late-afternoon/evening show. For an after-midnight show that is already
+ * dated the following day, the same clock date remains the relevant one. */
+export function homeDeadlineForShow(show: Pick<Show, "date" | "time">, homeBy: string): Date | undefined {
+  const match = /^(\d{2}):(\d{2})$/.exec(homeBy);
+  if (!match) return undefined;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return undefined;
+
+  const midnightIst = new Date(`${show.date}T00:00:00+05:30`);
+  const showStartMinutes = parseTimeToMinutes(show.time);
+  let deadlineMinutes = hours * 60 + minutes;
+  if (deadlineMinutes < 12 * 60 && showStartMinutes >= 12 * 60) deadlineMinutes += 24 * 60;
+  return new Date(midnightIst.getTime() + deadlineMinutes * 60_000);
+}
+
+function meetsHomeDeadline(scored: Scored, homeBy: string | undefined): boolean {
+  if (!homeBy) return true;
+  const deadline = homeDeadlineForShow(scored.candidate.show, homeBy);
+  return Boolean(deadline && projectedHomeArrival(scored).getTime() <= deadline.getTime());
+}
+
 function stablePlanTieBreak(a: Scored, b: Scored): number {
   const chronological = compareShowsChronologically(a.candidate.show, b.candidate.show);
   if (chronological !== 0) return chronological;
@@ -954,7 +998,8 @@ function whenLabelOf(when: WhenChoice): string {
 export async function buildRecommendation(
   origin: Origin,
   when: WhenChoice,
-  intentId: IntentId
+  intentId: IntentId,
+  preferences: RecommendationPreferences = DEFAULT_RECOMMENDATION_PREFERENCES
 ): Promise<BuildRecommendationResult> {
   const { shortlist: venues, format_scores: formatScores, format_score_default: formatScoreDefault, format_warnings: formatWarnings } =
     venuesData as unknown as VenuesCuratedData;
@@ -1078,10 +1123,11 @@ export async function buildRecommendation(
       timingBandForShow(candidate.show, candidate.route.durationMinutes)
     );
   }
-  let recommendationTimingBand = selectRecommendationTimingBand(
+  let recommendationTimingBands = selectRecommendationTimingBands(
     nonFourDxCandidates,
     intentId,
-    timingByJourney
+    timingByJourney,
+    preferences
   );
 
   // --- Score every viable show plan with a conservative cab-home fallback.
@@ -1109,7 +1155,7 @@ export async function buildRecommendation(
   const finalistPotential = new Map<string, { candidate: FinalCandidate; optimisticScore: number }>();
   for (const fallback of preliminaryScored) {
     if (isFourDxFormat(fallback.candidate.format)) continue;
-    if (timingByJourney.get(journeyKeyOf(fallback.candidate)) !== recommendationTimingBand) continue;
+    if (!recommendationTimingBands.has(timingByJourney.get(journeyKeyOf(fallback.candidate))!)) continue;
     const optimistic = scoreCandidateWithReturn(
       fallback.candidate,
       {
@@ -1133,7 +1179,7 @@ export async function buildRecommendation(
 
   const trafficFinalists = [...finalistPotential.entries()]
     .sort((a, b) => b[1].optimisticScore - a[1].optimisticScore)
-    .slice(0, TRAFFIC_FORECAST_FINALIST_LIMIT);
+    .slice(0, preferences.returnMode === "metro-only" ? METRO_ONLY_TRANSIT_FINALIST_LIMIT : TRAFFIC_FORECAST_FINALIST_LIMIT);
   // A route for "now" is enough to shortlist. These finalists are then
   // forecast at the time the person would actually leave, and back again at
   // theatre exit. This keeps Google usage bounded while making the winner's
@@ -1160,10 +1206,11 @@ export async function buildRecommendation(
       timingByJourney.set(key, timingBandForShow(candidate.show, candidate.route.durationMinutes));
     }
   }
-  recommendationTimingBand = selectRecommendationTimingBand(
+  recommendationTimingBands = selectRecommendationTimingBands(
     nonFourDxCandidates,
     intentId,
-    timingByJourney
+    timingByJourney,
+    preferences
   );
 
   const fallbackScored = finalCandidates.map((candidate) => {
@@ -1211,10 +1258,21 @@ export async function buildRecommendation(
   if (eligible.length === 0) {
     return { ok: false, reason: "Only 4DX showtimes turned up for this window — try a different one." };
   }
-  const timingRecommendationPool = eligible.filter(
-    (candidate) => timingByJourney.get(journeyKeyOf(candidate.candidate)) === recommendationTimingBand
-  );
+  const timingRecommendationPool = eligible.filter((candidate) => {
+    const timingBand = timingByJourney.get(journeyKeyOf(candidate.candidate));
+    return (
+      (timingBand ? recommendationTimingBands.has(timingBand) : false) &&
+      (preferences.returnMode !== "metro-only" || candidate.returnJourney.evidence === "live") &&
+      meetsHomeDeadline(candidate, preferences.homeBy)
+    );
+  });
   if (timingRecommendationPool.length === 0) {
+    if (preferences.returnMode === "metro-only") {
+      return { ok: false, reason: "No verified metro-home plan made the strongest live-checked options. Cab remains available if you relax this." };
+    }
+    if (preferences.homeBy) {
+      return { ok: false, reason: "No plan reaches home by that time with the available route evidence. Try a later deadline or relax a constraint." };
+    }
     return { ok: false, reason: "No normal-hours plan could be assembled for this window. Try another day." };
   }
   const recommendationPool =
@@ -1285,9 +1343,10 @@ export async function buildRecommendation(
     intentWeights,
     new Set(recommendationPool.map((candidate) => candidate.candidate.venue.id)).size
   );
+  const winnerTimingBand = timingByJourney.get(journeyKeyOf(winner.candidate)) ?? "normal";
   const timingNotice = timingFallbackNotice(
-    recommendationTimingBand,
-    isFullEpicMorningImaxCompromise(intentId, recommendationTimingBand, eligible, timingByJourney)
+    winnerTimingBand,
+    isFullEpicMorningImaxCompromise(intentId, winnerTimingBand, eligible, timingByJourney)
   );
   const fullEpicTradeoff = fullEpicTradeoffOf(winner, eligible, timingByJourney, intentId);
 
@@ -1302,7 +1361,7 @@ export async function buildRecommendation(
     seatClass: winner.candidate.show.cheapestSeatClassLabel ?? "SEATS",
     priceLabel: `₹${winner.candidate.show.priceRange!.min.toLocaleString("en-IN")}`,
     timing: {
-      band: recommendationTimingBand,
+      band: winnerTimingBand,
       ...(timingNotice ? { notice: timingNotice } : {}),
     },
     journey: {

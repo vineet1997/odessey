@@ -5,6 +5,7 @@ import {
   departureTimeForShow,
   filterMakeableShows,
   fullEpicScreenTier,
+  homeDeadlineForShow,
   isFourDxFormat,
   isTimelyMetroDeparture,
   isoDateOf,
@@ -70,6 +71,20 @@ describe("outboundDepartureTimeForShow", () => {
   it("asks for traffic at the planned leave-home time, not request time", () => {
     expect(outboundDepartureTimeForShow(show({ date: "2026-07-22", time: "7:00 PM" }), 35)).toBe(
       "2026-07-22T12:40:00.000Z"
+    );
+  });
+});
+
+describe("homeDeadlineForShow", () => {
+  it("treats a midnight deadline as the next calendar day for an evening show", () => {
+    expect(homeDeadlineForShow(show({ date: "2026-07-22", time: "8:00 PM" }), "00:30")?.toISOString()).toBe(
+      "2026-07-22T19:00:00.000Z"
+    );
+  });
+
+  it("keeps a post-midnight show and its deadline on the displayed show date", () => {
+    expect(homeDeadlineForShow(show({ date: "2026-07-23", time: "12:30 AM" }), "01:30")?.toISOString()).toBe(
+      "2026-07-22T20:00:00.000Z"
     );
   });
 });

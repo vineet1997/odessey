@@ -8,7 +8,11 @@ import { ResultExperience } from "./components/ResultExperience";
 import type { IntentId } from "./scoring/score";
 import type { HelmAnswers } from "./components/helm/types";
 import type { RecommendationResult } from "./types/recommendation";
-import type { DossierEntry } from "./lib/buildRecommendation";
+import {
+  DEFAULT_RECOMMENDATION_PREFERENCES,
+  type DossierEntry,
+  type RecommendationPreferences,
+} from "./lib/buildRecommendation";
 
 const MadePage = lazy(() => import("./components/MadePage").then((module) => ({ default: module.MadePage })));
 
@@ -29,6 +33,9 @@ function App() {
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [dossier, setDossier] = useState<DossierEntry[]>([]);
   const [errorReason, setErrorReason] = useState<string | null>(null);
+  const [constraintReason, setConstraintReason] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<RecommendationPreferences>(DEFAULT_RECOMMENDATION_PREFERENCES);
+  const [pendingPreferences, setPendingPreferences] = useState<RecommendationPreferences | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -58,12 +65,22 @@ function App() {
     setAnswers(null);
     setResult(null);
     setErrorReason(null);
+    setConstraintReason(null);
+    setPendingPreferences(null);
+    setPreferences(DEFAULT_RECOMMENDATION_PREFERENCES);
     setStage("helm"); // ithaka_visited is already set — no need to replay the Prologue
   }
 
   function switchIntent(intentId: IntentId) {
     if (!answers || intentId === answers.intentId) return;
     setAnswers({ ...answers, intentId });
+    setStage("crossing");
+  }
+
+  function refineRecommendation(nextPreferences: RecommendationPreferences) {
+    if (!answers) return;
+    setConstraintReason(null);
+    setPendingPreferences(nextPreferences);
     setStage("crossing");
   }
 
@@ -97,12 +114,22 @@ function App() {
           origin={answers.origin}
           when={answers.when}
           intentId={answers.intentId}
+          preferences={pendingPreferences ?? preferences}
           onComplete={(computed, dossierEntries) => {
             setResult(computed);
             setDossier(dossierEntries);
+            if (pendingPreferences) setPreferences(pendingPreferences);
+            setPendingPreferences(null);
+            setConstraintReason(null);
             setStage("result");
           }}
           onError={(reason) => {
+            if (result && pendingPreferences) {
+              setPendingPreferences(null);
+              setConstraintReason(reason);
+              setStage("result");
+              return;
+            }
             setErrorReason(reason);
             setStage("error");
           }}
@@ -131,6 +158,9 @@ function App() {
             origin={answers.origin}
             activeIntent={answers.intentId}
             onSwitchIntent={switchIntent}
+            preferences={preferences}
+            onChangePreferences={refineRecommendation}
+            constraintReason={constraintReason}
             onStartOver={startOver}
           />
         </div>
