@@ -1,12 +1,13 @@
 {
   "_meta": {
-    "generatedAt": "2026-07-28T12:01:53.035Z",
+    "generatedAt": "2026-07-28T12:31:52.026Z",
     "movieTitle": "The Odyssey",
     "source": "district.in (__NEXT_DATA__ embedded session JSON)",
     "timezone": "IST (converted from District's UTC showTime fields)",
     "datesCovered": [
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "totalVenues": 15,
     "ok": 15,
@@ -17,21 +18,8 @@
     "priya-vasant-vihar": {
       "venueId": "priya-vasant-vihar",
       "districtUrl": "https://www.district.in/movies/pvr-imax-with-laser-priya-vasant-vihar-new-delhi-in-new-delhi-CD1022246",
-      "fetchedAt": "2026-07-28T12:00:26.660Z",
+      "fetchedAt": "2026-07-28T12:30:25.517Z",
       "showtimes": [
-        {
-          "date": "2026-07-28",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 54,
-          "seatsTotal": 381,
-          "priceRange": {
-            "min": 600,
-            "max": 850
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
         {
           "date": "2026-07-28",
           "time": "8:15 PM",
@@ -50,7 +38,7 @@
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 106,
+          "seatsAvailable": 101,
           "seatsTotal": 381,
           "priceRange": {
             "min": 600,
@@ -63,7 +51,7 @@
           "time": "9:45 AM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 106,
+          "seatsAvailable": 101,
           "seatsTotal": 381,
           "priceRange": {
             "min": 500,
@@ -76,7 +64,7 @@
           "time": "1:15 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 100,
+          "seatsAvailable": 101,
           "seatsTotal": 381,
           "priceRange": {
             "min": 600,
@@ -128,21 +116,8 @@
     "select-citywalk-saket": {
       "venueId": "select-citywalk-saket",
       "districtUrl": "https://www.district.in/movies/pvr-select-city-walk-saket-new-delhi-in-delhi-ncr-CD1022254",
-      "fetchedAt": "2026-07-28T12:00:32.385Z",
+      "fetchedAt": "2026-07-28T12:30:31.473Z",
       "showtimes": [
-        {
-          "date": "2026-07-28",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 79,
-          "seatsTotal": 380,
-          "priceRange": {
-            "min": 750,
-            "max": 850
-          },
-          "cheapestSeatClassLabel": "LOUNGER"
-        },
         {
           "date": "2026-07-28",
           "time": "7:10 PM",
@@ -304,7 +279,7 @@
     "mall-of-india-noida": {
       "venueId": "mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-superplex-mall-of-india-sector-18-noida-in-delhi-ncr-CD1024358",
-      "fetchedAt": "2026-07-28T12:00:38.076Z",
+      "fetchedAt": "2026-07-28T12:30:37.704Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -363,7 +338,7 @@
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 243,
+          "seatsAvailable": 224,
           "seatsTotal": 361,
           "priceRange": {
             "min": 550,
@@ -545,7 +520,7 @@
     "vegas-dwarka": {
       "venueId": "vegas-dwarka",
       "districtUrl": "https://www.district.in/movies/pvr-vegas-dwarka-new-delhi-in-gurgaon-CD1022286",
-      "fetchedAt": "2026-07-28T12:00:43.758Z",
+      "fetchedAt": "2026-07-28T12:30:43.376Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -630,11 +605,11 @@
           "time": "8:30 AM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 83,
+          "seatsAvailable": 81,
           "seatsTotal": 96,
           "priceRange": {
             "min": 360,
-            "max": 390
+            "max": 420
           },
           "cheapestSeatClassLabel": "CLASSIC ROWS"
         },
@@ -643,7 +618,7 @@
           "time": "9:15 AM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 269,
+          "seatsAvailable": 268,
           "seatsTotal": 323,
           "priceRange": {
             "min": 420,
@@ -734,7 +709,7 @@
           "time": "6:25 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 90,
+          "seatsAvailable": 88,
           "seatsTotal": 96,
           "priceRange": {
             "min": 440,
@@ -812,27 +787,14 @@
     "ambience-gurugram-kotak-imax": {
       "venueId": "ambience-gurugram-kotak-imax",
       "districtUrl": "https://www.district.in/movies/pepsi-pvr-ambience-ambience-mall-gurugram-in-gurgaon-CD1022302",
-      "fetchedAt": "2026-07-28T12:00:49.695Z",
+      "fetchedAt": "2026-07-28T12:30:49.142Z",
       "showtimes": [
-        {
-          "date": "2026-07-28",
-          "time": "4:45 PM",
-          "format": "IMAX 2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 63,
-          "seatsTotal": 362,
-          "priceRange": {
-            "min": 760,
-            "max": 870
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
         {
           "date": "2026-07-28",
           "time": "6:00 PM",
           "format": "2D",
-          "availability": "Filling Fast",
-          "seatsAvailable": 69,
+          "availability": "Available",
+          "seatsAvailable": 99,
           "seatsTotal": 208,
           "priceRange": {
             "min": 92,
@@ -1229,7 +1191,7 @@
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 141,
+          "seatsAvailable": 137,
           "seatsTotal": 362,
           "priceRange": {
             "min": 560,
@@ -1242,14 +1204,14 @@
     "inox-paras-nehru-place": {
       "venueId": "inox-paras-nehru-place",
       "districtUrl": "https://www.district.in/movies/inox-coca-cola-imax-paras-nehru-place-delhi-in-delhi-ncr-CD1018957",
-      "fetchedAt": "2026-07-28T12:00:55.754Z",
+      "fetchedAt": "2026-07-28T12:30:54.890Z",
       "showtimes": [
         {
           "date": "2026-07-28",
           "time": "7:45 PM",
           "format": "IMAX 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 90,
+          "seatsAvailable": 85,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -1314,7 +1276,7 @@
           "time": "7:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 213,
+          "seatsAvailable": 195,
           "seatsTotal": 353,
           "priceRange": {
             "min": 520,
@@ -1340,7 +1302,7 @@
     "inox-vishal-mall-rajouri": {
       "venueId": "inox-vishal-mall-rajouri",
       "districtUrl": "https://www.district.in/movies/inox-vishal-mall-rajouri-garden-new-delhi-in-delhi-ncr-CD1018962",
-      "fetchedAt": "2026-07-28T12:01:01.281Z",
+      "fetchedAt": "2026-07-28T12:31:00.559Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -1373,7 +1335,7 @@
           "time": "11:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 212,
+          "seatsAvailable": 200,
           "seatsTotal": 254,
           "priceRange": {
             "min": 540,
@@ -1438,7 +1400,7 @@
           "time": "4:45 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 215,
+          "seatsAvailable": 213,
           "seatsTotal": 243,
           "priceRange": {
             "min": 540,
@@ -1451,7 +1413,7 @@
           "time": "8:15 PM",
           "format": "IMAX 2D",
           "availability": "Available",
-          "seatsAvailable": 179,
+          "seatsAvailable": 155,
           "seatsTotal": 254,
           "priceRange": {
             "min": 540,
@@ -1484,20 +1446,85 @@
             "max": 580
           },
           "cheapestSeatClassLabel": "EXECUTIVE"
+        },
+        {
+          "date": "2026-07-30",
+          "time": "9:45 AM",
+          "format": "IMAX 2D",
+          "availability": "Available",
+          "seatsAvailable": 243,
+          "seatsTotal": 254,
+          "priceRange": {
+            "min": 420,
+            "max": 460
+          },
+          "cheapestSeatClassLabel": "EXECUTIVE"
+        },
+        {
+          "date": "2026-07-30",
+          "time": "1:15 PM",
+          "format": "IMAX 2D",
+          "availability": "Available",
+          "seatsAvailable": 243,
+          "seatsTotal": 254,
+          "priceRange": {
+            "min": 540,
+            "max": 580
+          },
+          "cheapestSeatClassLabel": "EXECUTIVE"
+        },
+        {
+          "date": "2026-07-30",
+          "time": "4:45 PM",
+          "format": "IMAX 2D",
+          "availability": "Available",
+          "seatsAvailable": 243,
+          "seatsTotal": 254,
+          "priceRange": {
+            "min": 540,
+            "max": 580
+          },
+          "cheapestSeatClassLabel": "EXECUTIVE"
+        },
+        {
+          "date": "2026-07-30",
+          "time": "8:15 PM",
+          "format": "IMAX 2D",
+          "availability": "Available",
+          "seatsAvailable": 243,
+          "seatsTotal": 254,
+          "priceRange": {
+            "min": 540,
+            "max": 580
+          },
+          "cheapestSeatClassLabel": "EXECUTIVE"
+        },
+        {
+          "date": "2026-07-30",
+          "time": "11:45 PM",
+          "format": "IMAX 2D",
+          "availability": "Available",
+          "seatsAvailable": 243,
+          "seatsTotal": 254,
+          "priceRange": {
+            "min": 540,
+            "max": 580
+          },
+          "cheapestSeatClassLabel": "EXECUTIVE"
         }
       ]
     },
     "inox-insignia-epicuria": {
       "venueId": "inox-insignia-epicuria",
       "districtUrl": "https://www.district.in/movies/inox-insignia-at-epicuria-nehru-place-new-delhi-in-delhi-ncr-CD1018958",
-      "fetchedAt": "2026-07-28T12:01:06.964Z",
+      "fetchedAt": "2026-07-28T12:31:06.326Z",
       "showtimes": [
         {
           "date": "2026-07-28",
           "time": "5:40 PM",
           "format": "INSIGNIA 2D",
           "availability": "Available",
-          "seatsAvailable": 26,
+          "seatsAvailable": 27,
           "seatsTotal": 41,
           "priceRange": {
             "min": 499,
@@ -1653,7 +1680,7 @@
     "cinepolis-dlf-avenue-saket": {
       "venueId": "cinepolis-dlf-avenue-saket",
       "districtUrl": "https://www.district.in/movies/cinepolis-dlf-avenue-saket-new-delhi-in-delhi-ncr-CD1390",
-      "fetchedAt": "2026-07-28T12:01:12.547Z",
+      "fetchedAt": "2026-07-28T12:31:11.950Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -1664,7 +1691,7 @@
           "seatsTotal": 156,
           "priceRange": {
             "min": 150,
-            "max": 300
+            "max": 150
           },
           "cheapestSeatClassLabel": "NORMAL"
         },
@@ -1672,8 +1699,8 @@
           "date": "2026-07-28",
           "time": "7:25 PM",
           "format": "2D",
-          "availability": "Available",
-          "seatsAvailable": 89,
+          "availability": "Filling Fast",
+          "seatsAvailable": 63,
           "seatsTotal": 167,
           "priceRange": {
             "min": 150,
@@ -1699,11 +1726,11 @@
           "time": "10:55 PM",
           "format": "2D",
           "availability": "Available",
-          "seatsAvailable": 148,
-          "seatsTotal": 161,
+          "seatsAvailable": 129,
+          "seatsTotal": 167,
           "priceRange": {
             "min": 150,
-            "max": 300
+            "max": 150
           },
           "cheapestSeatClassLabel": "NORMAL"
         },
@@ -1712,7 +1739,7 @@
           "time": "11:25 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 78,
+          "seatsAvailable": 76,
           "seatsTotal": 104,
           "priceRange": {
             "min": 500,
@@ -1777,7 +1804,7 @@
           "time": "1:25 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 85,
+          "seatsAvailable": 83,
           "seatsTotal": 104,
           "priceRange": {
             "min": 500,
@@ -1842,7 +1869,7 @@
           "time": "7:55 PM",
           "format": "4DX-2D",
           "availability": "Available",
-          "seatsAvailable": 88,
+          "seatsAvailable": 84,
           "seatsTotal": 104,
           "priceRange": {
             "min": 600,
@@ -1881,27 +1908,14 @@
     "devgn-cinex-elan-epic": {
       "venueId": "devgn-cinex-elan-epic",
       "districtUrl": "https://www.district.in/movies/devgn-cinex-formerly-ny-elan-epic-gurugram-in-gurgaon-CD1029765",
-      "fetchedAt": "2026-07-28T12:01:18.363Z",
+      "fetchedAt": "2026-07-28T12:31:17.674Z",
       "showtimes": [
-        {
-          "date": "2026-07-28",
-          "time": "5:30 PM",
-          "format": "LASER DOLBY ATMOS 2D",
-          "availability": "Available",
-          "seatsAvailable": 207,
-          "seatsTotal": 242,
-          "priceRange": {
-            "min": 150,
-            "max": 400
-          },
-          "cheapestSeatClassLabel": "CLASSIC"
-        },
         {
           "date": "2026-07-28",
           "time": "7:00 PM",
           "format": "AMOR BY DEVGN CINEX 2D",
           "availability": "Available",
-          "seatsAvailable": 60,
+          "seatsAvailable": 58,
           "seatsTotal": 68,
           "priceRange": {
             "min": 450,
@@ -1927,7 +1941,7 @@
           "time": "10:30 PM",
           "format": "AMOR BY DEVGN CINEX 2D",
           "availability": "Available",
-          "seatsAvailable": 61,
+          "seatsAvailable": 58,
           "seatsTotal": 68,
           "priceRange": {
             "min": 450,
@@ -2044,7 +2058,7 @@
     "wave-cinemas-gurugram": {
       "venueId": "wave-cinemas-gurugram",
       "districtUrl": "https://www.district.in/movies/wave-cinemas-gurugram-in-gurgaon-CD1039102",
-      "fetchedAt": "2026-07-28T12:01:24.034Z",
+      "fetchedAt": "2026-07-28T12:31:23.544Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -2272,14 +2286,14 @@
     "directors-cut-mall-of-india-noida": {
       "venueId": "directors-cut-mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-directors-cut-dlf-mall-of-india-noida-in-delhi-ncr-CD1058603",
-      "fetchedAt": "2026-07-28T12:01:30.439Z",
+      "fetchedAt": "2026-07-28T12:31:29.224Z",
       "showtimes": [
         {
           "date": "2026-07-28",
           "time": "6:00 PM",
           "format": "DIRECTOR'S CUT 2D",
           "availability": "Filling Fast",
-          "seatsAvailable": 7,
+          "seatsAvailable": 10,
           "seatsTotal": 34,
           "priceRange": {
             "min": 500,
@@ -2291,8 +2305,8 @@
           "date": "2026-07-28",
           "time": "7:35 PM",
           "format": "DIRECTOR'S CUT 2D",
-          "availability": "Available",
-          "seatsAvailable": 47,
+          "availability": "Filling Fast",
+          "seatsAvailable": 30,
           "seatsTotal": 87,
           "priceRange": {
             "min": 500,
@@ -2448,14 +2462,14 @@
     "inox-pacific-mall-jasola": {
       "venueId": "inox-pacific-mall-jasola",
       "districtUrl": "https://www.district.in/movies/inox-pacific-mall-jasola-new-delhi-in-delhi-ncr-CD1018963",
-      "fetchedAt": "2026-07-28T12:01:36.628Z",
+      "fetchedAt": "2026-07-28T12:31:34.982Z",
       "showtimes": [
         {
           "date": "2026-07-28",
           "time": "6:00 PM",
           "format": "INSIGNIA 2D",
           "availability": "Available",
-          "seatsAvailable": 34,
+          "seatsAvailable": 33,
           "seatsTotal": 61,
           "priceRange": {
             "min": 399,
@@ -2468,7 +2482,7 @@
           "time": "6:20 PM",
           "format": "2D",
           "availability": "Available",
-          "seatsAvailable": 83,
+          "seatsAvailable": 80,
           "seatsTotal": 172,
           "priceRange": {
             "min": 149,
@@ -2494,7 +2508,7 @@
           "time": "11:10 PM",
           "format": "RECLINERS 2D",
           "availability": "Available",
-          "seatsAvailable": 179,
+          "seatsAvailable": 175,
           "seatsTotal": 196,
           "priceRange": {
             "min": 149,
@@ -2624,7 +2638,7 @@
     "pvr-cinemagic-pitampura": {
       "venueId": "pvr-cinemagic-pitampura",
       "districtUrl": "https://www.district.in/movies/pvr-cinemagic-unity-one-elegante-nsp-pitampura-in-delhi-ncr-CD1102047",
-      "fetchedAt": "2026-07-28T12:01:42.447Z",
+      "fetchedAt": "2026-07-28T12:31:40.665Z",
       "showtimes": [
         {
           "date": "2026-07-28",
@@ -2670,7 +2684,7 @@
           "time": "11:30 PM",
           "format": "PXL 2D",
           "availability": "Available",
-          "seatsAvailable": 270,
+          "seatsAvailable": 266,
           "seatsTotal": 276,
           "priceRange": {
             "min": 149,
@@ -2683,7 +2697,7 @@
           "time": "9:30 AM",
           "format": "PXL 2D",
           "availability": "Available",
-          "seatsAvailable": 264,
+          "seatsAvailable": 262,
           "seatsTotal": 276,
           "priceRange": {
             "min": 149,
@@ -2774,14 +2788,14 @@
     "new-us-cinemas-ghaziabad": {
       "venueId": "new-us-cinemas-ghaziabad",
       "districtUrl": "https://www.district.in/movies/new-us-cinemas-aditya-mall-ghaziabad-in-new-delhi-CD25281",
-      "fetchedAt": "2026-07-28T12:01:48.153Z",
+      "fetchedAt": "2026-07-28T12:31:46.844Z",
       "showtimes": [
         {
           "date": "2026-07-28",
           "time": "7:00 PM",
           "format": "4K DOLBY 2D",
           "availability": "Available",
-          "seatsAvailable": 240,
+          "seatsAvailable": 225,
           "seatsTotal": 262,
           "priceRange": {
             "min": 92,
