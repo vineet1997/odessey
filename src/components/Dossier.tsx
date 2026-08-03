@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, RotateCcw } from "lucide-react";
+import { ChevronDown, ListOrdered, Map } from "lucide-react";
 import type { DossierEntry } from "../lib/buildRecommendation";
 import type { Origin } from "./helm/types";
 import type { RecommendationResult } from "../types/recommendation";
@@ -9,7 +9,6 @@ interface DossierProps {
   result: RecommendationResult;
   dossier: DossierEntry[];
   origin: Origin;
-  onStartOver: () => void;
 }
 
 /**
@@ -20,19 +19,20 @@ interface DossierProps {
  * Voice rule throughout: opinions in serif (italic for verdicts), evidence
  * in mono (uppercase, tracking-widest) — same as ResultCard.
  */
-export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) {
+export function Dossier({ result, dossier, origin }: DossierProps) {
   const [researchOpen, setResearchOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex w-full flex-col gap-5">
       {/* Value comparison — Worth Every Rupee only, when it fires. */}
       {result.valueComparison && <ValueComparisonBlock valueComparison={result.valueComparison} />}
 
       <section aria-labelledby="evidence-heading">
-        <p id="evidence-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted"><span className="mr-3 text-gold-bright">04</span>Data &amp; certainty</p>
-        <p className="mt-3 max-w-[48rem] font-body text-[1rem] leading-relaxed text-ink">
-          What was observed, what was estimated, and how broad the comparison was.
+        <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-gold-bright">04 / Evidence</p>
+        <h2 id="evidence-heading" className="mt-3 font-body text-[1.75rem] font-semibold leading-tight text-ink sm:text-[2rem]">What we checked</h2>
+        <p className="mt-3 max-w-[42rem] font-body text-[1rem] leading-[1.55] text-ink-muted">
+          {result.provenance.venuesChecked} venues and {result.provenance.plansScored} complete plans, with live and estimated facts clearly separated.
         </p>
 
         <EvidenceReceipt result={result} />
@@ -42,12 +42,13 @@ export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) 
           onClick={() => setMapOpen((open) => !open)}
           aria-expanded={mapOpen}
           aria-controls="candidate-map"
-          className="group mt-6 flex min-h-[5.25rem] w-full cursor-pointer items-center justify-between border-y border-border px-0 text-left transition-colors duration-150 hover:bg-ink/[0.025] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+          className="group mt-4 flex min-h-[5rem] w-full cursor-pointer items-center justify-between rounded-sm border border-border bg-[var(--result-panel-soft)] px-4 py-3 text-left transition-colors duration-150 hover:border-ink/25 hover:bg-ink/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright sm:px-5"
         >
-          <span className="flex flex-col gap-1">
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink">{mapOpen ? "Close candidate map" : "Open candidate map"}</span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
-              {result.provenance.plansScored} plans across {result.provenance.venuesChecked} venues
+          <span className="flex min-w-0 items-center gap-3.5">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-bg-raised text-sea-bright"><Map size={17} strokeWidth={1.7} aria-hidden="true" /></span>
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="font-body text-[1.05rem] font-semibold text-ink">{mapOpen ? "Close the venue map" : `Explore the ${result.provenance.venuesChecked} venues considered`}</span>
+              <span className="font-body text-[13px] leading-snug text-ink-muted">See every cinema included in this comparison</span>
             </span>
           </span>
           <ChevronDown
@@ -70,12 +71,13 @@ export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) 
         onClick={() => setResearchOpen((open) => !open)}
         aria-expanded={researchOpen}
         aria-controls="full-research"
-        className="group flex min-h-[5.25rem] w-full cursor-pointer items-center justify-between border-y border-border px-0 text-left transition-colors duration-150 hover:bg-ink/[0.025] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+        className="group flex min-h-[5rem] w-full cursor-pointer items-center justify-between rounded-sm border border-border bg-[var(--result-panel-soft)] px-4 py-3 text-left transition-colors duration-150 hover:border-ink/25 hover:bg-ink/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright sm:px-5"
       >
-        <span className="flex flex-col gap-1">
-          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink">{researchOpen ? "Hide the full ledger" : "Inspect every plan"}</span>
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
-            {researchOpen ? "Ranked best to worst" : "The complete research, ranked best to worst"}
+        <span className="flex min-w-0 items-center gap-3.5">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-bg-raised text-gold-bright"><ListOrdered size={17} strokeWidth={1.7} aria-hidden="true" /></span>
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="font-body text-[1.05rem] font-semibold text-ink">{researchOpen ? "Hide the ranked plans" : `View all ${result.provenance.plansScored} ranked plans`}</span>
+            <span className="font-body text-[13px] leading-snug text-ink-muted">Compare the complete nights, best to worst</span>
           </span>
         </span>
         <ChevronDown
@@ -102,7 +104,6 @@ export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) 
         </div>
       )}
 
-      <ResearchReceipt onStartOver={onStartOver} />
     </div>
   );
 }
@@ -118,9 +119,8 @@ function EvidenceReceipt({ result }: { result: RecommendationResult }) {
       : "Transit unverified · cab estimated";
 
   return (
-    <div className="mt-6 border-y border-border">
-      <p className="py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-ink">Data &amp; certainty</p>
-      <dl className="grid gap-px border-t border-border bg-border sm:grid-cols-2">
+    <div className="mt-6 overflow-hidden rounded-sm border border-border">
+      <dl className="grid gap-px bg-border sm:grid-cols-2">
         <EvidenceFact label="Showtimes" value={`${result.evidence.showtimes.source} · ${result.evidence.showtimes.refreshedAtLabel}`} />
         <EvidenceFact label="Outbound" value={routeSource} />
         <EvidenceFact label="Return" value={returnSource} />
@@ -132,27 +132,10 @@ function EvidenceReceipt({ result }: { result: RecommendationResult }) {
 
 function EvidenceFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-bg px-4 py-4">
-      <dt className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-muted">{label}</dt>
-      <dd className="mt-2 font-mono text-[11.5px] uppercase leading-relaxed tracking-[0.045em] text-ink">{value}</dd>
+    <div className="bg-bg-raised px-4 py-4 sm:px-5 sm:py-5">
+      <dt className="font-mono text-[9.5px] font-medium uppercase tracking-[0.08em] text-ink-muted">{label}</dt>
+      <dd className="mt-2 font-body text-[15px] font-semibold leading-snug text-ink">{value}</dd>
     </div>
-  );
-}
-
-function ResearchReceipt({ onStartOver }: { onStartOver: () => void }) {
-  return (
-    <footer className="pt-3" data-testid="research-receipt">
-      <div className="flex justify-end border-t border-border pt-4">
-        <button
-          type="button"
-          onClick={onStartOver}
-          className="inline-flex min-h-10 items-center gap-2 self-start font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
-        >
-          <RotateCcw size={13} strokeWidth={1.5} />
-          Start a new search
-        </button>
-      </div>
-    </footer>
   );
 }
 

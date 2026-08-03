@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from "react";
-import { ExternalLink, MapPinned, Share2 } from "lucide-react";
+import { BarChart3, CheckCircle2, Clock3, ExternalLink, IndianRupee, MapPinned, RefreshCw, Share2 } from "lucide-react";
 import { Dossier } from "./Dossier";
 import type { Origin } from "./helm/types";
 import type { DossierEntry, RecommendationPreferences } from "../lib/buildRecommendation";
@@ -167,33 +167,43 @@ export function ResultExperience({
               />
             </section>
 
-            <section className="border-t border-border py-9 sm:py-11" aria-labelledby="why-heading">
-              <div className="mb-7">
+            <section className="pb-8 pt-4 sm:pb-10 sm:pt-6" aria-labelledby="why-heading">
+              <div className="mb-7 grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                 <div className="min-w-0">
-                  <p id="why-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted"><span className="mr-3 text-gold-bright">02</span>Why it won</p>
-                  <p className="mt-3 font-mono text-[13px] font-medium uppercase leading-relaxed tracking-[0.06em] text-ink sm:text-[14px]">{result.narrative.outcome.lead}</p>
+                  <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-gold-bright">02 / Decision criteria</p>
+                  <h2 id="why-heading" className="mt-3 max-w-[22ch] font-body text-[1.75rem] font-semibold leading-[1.08] text-ink sm:text-[2rem]">
+                    Why this plan came out on top
+                  </h2>
+                  <p className="mt-3 max-w-[42rem] font-body text-[1.02rem] leading-[1.55] text-ink-muted sm:text-[1.08rem]">{readableSentence(result.narrative.outcome.lead)}</p>
+                </div>
+                <div className="flex items-baseline gap-2 border-l-2 border-gold-bright pl-4 sm:block sm:min-w-[8.5rem]">
+                  <p className="font-mono text-[2rem] font-medium leading-none tabular-nums text-ink sm:text-[2.4rem]">{Math.round(result.score.totalScore * 100)}</p>
+                  <p className="font-mono text-[9.5px] uppercase tracking-[0.09em] text-ink-muted sm:mt-2">Fit score / 100</p>
                 </div>
               </div>
               <WinningReasons result={result} timeline={timeline} returnCopy={returnCopy.detail} />
-              <details className="group mt-7 border-t border-border pt-4">
-                <summary className="cursor-pointer list-none font-mono text-[10px] uppercase tracking-[0.11em] text-ink-muted transition-colors hover:text-gold-bright">
-                  <span className="group-open:hidden">See score balance</span>
-                  <span className="hidden group-open:inline">Hide score balance</span>
-                </summary>
-                <div className="mt-5"><ScoreDimensions result={result} /></div>
-              </details>
+              <div className="mt-6 rounded-sm border border-border bg-[var(--result-panel-soft)] p-5 sm:p-6" aria-label="How this match was scored">
+                <div className="flex items-start gap-3">
+                  <BarChart3 className="mt-0.5 shrink-0 text-gold-bright" size={18} strokeWidth={1.7} aria-hidden="true" />
+                  <div>
+                    <h3 className="font-body text-[1.18rem] font-semibold leading-tight text-ink">How this match was scored</h3>
+                    <p className="mt-1.5 font-body text-[14px] leading-relaxed text-ink-muted">The score reflects the priority you chose and the evidence available tonight.</p>
+                  </div>
+                </div>
+                <div className="mt-6"><ScoreDimensions result={result} /></div>
+              </div>
             </section>
 
             {result.fullEpicTradeoff && <FullEpicTradeoff result={result} />}
 
-            <section className="border-t border-border py-9 sm:py-11" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
+            <section className="pb-10 pt-6 sm:pb-12 sm:pt-8" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
               <div>
                 <h2 id="counterfactual-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
                   <span className="mr-3 text-gold-bright">03</span>Stress-test the brief
                 </h2>
                 <p className="mt-3 max-w-[39rem] font-body text-[1rem] leading-relaxed text-ink-muted">Same candidate set, deliberately different priorities. Pick a lens to recalculate the answer.</p>
               </div>
-              <ol className="mt-6 divide-y divide-border border-y border-border">
+              <ol className="mt-6 grid gap-3">
                 {counterfactuals.map((item) => (
                   <CounterfactualEditorialRow
                     key={item.id ?? `${item.title}-${item.venueName}`}
@@ -206,10 +216,11 @@ export function ResultExperience({
                   />
                 ))}
               </ol>
+              <RestartPrompt onStartOver={onStartOver} />
             </section>
 
-            <section className="border-t border-border pt-9 sm:pt-11" aria-label="Research and controls">
-              <Dossier result={result} dossier={dossier} origin={origin} onStartOver={onStartOver} />
+            <section className="pt-4 sm:pt-6" aria-label="Research and controls">
+              <Dossier result={result} dossier={dossier} origin={origin} />
             </section>
             <FeedbackPrompt context={{ venue: result.venueName, format: result.formatChip, intent: activeIntent }} />
             <footer className="build-credit border-t border-border pb-4 pt-10 text-center text-sm text-ink-muted">
@@ -441,36 +452,62 @@ function WinningReasons({
   const reasons = [
     {
       number: "01",
-      label: "Screen, evidenced",
+      label: "Image quality",
       value: result.formatChip,
       detail: formatConfidenceCopy(result),
+      status: result.screenProof.imax === "confirmed" ? "Confirmed" : "Reviewed",
+      tone: "confirmed" as const,
+      icon: CheckCircle2,
     },
     {
       number: "02",
-      label: "The evening works",
+      label: "Timing & return",
       value: `${result.journey.outbound.durationMinutes} min there · ${returnLabel}`,
       detail: returnCopy,
+      status: result.evidence.return.status === "live" ? "First step live" : result.evidence.return.status === "no-route" ? "No transit" : "Unverified",
+      tone: result.evidence.return.status === "live" ? "live" as const : result.evidence.return.status === "no-route" ? "warning" as const : "neutral" as const,
+      icon: Clock3,
     },
     {
       number: "03",
-      label: "Whole-night value",
+      label: "Total night cost",
       value: `${total} door to door`,
       detail: result.narrative.outcome.receipt,
+      status: result.journey.outbound.costIsEstimate || result.journey.return.costIsEstimate ? "Estimated" : "Observed",
+      tone: "neutral" as const,
+      icon: IndianRupee,
     },
   ];
 
   return (
-    <ol className="grid divide-y divide-border border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <ol className="grid gap-3">
       {reasons.map((reason) => (
-        <li key={reason.number} className="min-h-[12rem] px-0 py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0">
-          <p className="font-mono text-[10px] tracking-[0.12em] text-gold-bright">{reason.number}</p>
-          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.11em] text-ink-muted">{reason.label}</p>
-          <p className="mt-2 font-mono text-[12px] font-medium uppercase leading-relaxed tracking-[0.045em] text-ink">{reason.value}</p>
-          <p className="mt-3 font-body text-[14px] leading-relaxed text-ink-muted">{reason.detail}</p>
+        <li key={reason.number} className="grid gap-4 rounded-sm border border-border bg-[var(--result-panel-soft)] p-4 sm:grid-cols-[2.5rem_minmax(9rem,.65fr)_minmax(0,1fr)] sm:items-start sm:gap-5 sm:p-5">
+          <div className="flex items-center gap-3 sm:block">
+            <span className="grid h-8 w-8 place-items-center rounded-full border border-gold/35 font-mono text-[10px] text-gold-bright">{reason.number}</span>
+            <reason.icon className="text-ink-muted sm:mx-auto sm:mt-4" size={16} strokeWidth={1.6} aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-body text-[1.1rem] font-semibold text-ink">{reason.label}</h3>
+              <StatusBadge label={reason.status} tone={reason.tone} />
+            </div>
+            <p className="mt-2 font-mono text-[14px] font-medium uppercase leading-[1.4] tracking-[0.02em] text-ink sm:text-[15px]">{reason.value}</p>
+          </div>
+          <p className="font-body text-[15px] leading-[1.55] text-ink-muted sm:pt-0.5">{readableSentence(reason.detail)}</p>
         </li>
       ))}
     </ol>
   );
+}
+
+function StatusBadge({ label, tone }: { label: string; tone: "confirmed" | "live" | "neutral" | "warning" }) {
+  const toneClass = tone === "confirmed" || tone === "live"
+    ? "border-sea-bright/35 bg-sea/15 text-sea-bright"
+    : tone === "warning"
+      ? "border-wine-bright/40 bg-wine/15 text-wine-bright"
+      : "border-border bg-bg-raised text-ink-muted";
+  return <span className={`rounded-full border px-2 py-1 font-mono text-[8.5px] font-medium uppercase tracking-[0.08em] ${toneClass}`}>{label}</span>;
 }
 
 function ScoreDimensions({ result }: { result: RecommendationResult }) {
@@ -485,12 +522,12 @@ function ScoreDimensions({ result }: { result: RecommendationResult }) {
     <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
       {rows.map((row) => (
         <div key={row.label}>
-          <div className="mb-2.5 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.085em] text-ink-muted">
+          <div className="mb-2.5 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.06em] text-ink-muted">
             <span>{row.label}</span>
             <span className="tabular-nums">{Math.round(row.value * 100)}</span>
           </div>
-          <div className="h-[4px] bg-ink/15">
-            <div className="h-[4px] bg-gold-bright" style={{ width: `${Math.max(6, Math.round(row.value * 100))}%` }} />
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink/10" role="img" aria-label={`${row.label}: ${Math.round(row.value * 100)} out of 100`}>
+            <div className="h-full rounded-full bg-gold-bright" style={{ width: `${Math.max(6, Math.round(row.value * 100))}%` }} />
           </div>
         </div>
       ))}
@@ -501,24 +538,24 @@ function ScoreDimensions({ result }: { result: RecommendationResult }) {
 function FullEpicTradeoff({ result }: { result: RecommendationResult }) {
   const tradeoff = result.fullEpicTradeoff!;
   return (
-    <section className="border-t border-border py-9 sm:py-11" aria-labelledby="closer-screen-heading">
-      <p id="closer-screen-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
-        The closer screen
-      </p>
-      <div className="mt-5 grid gap-5 border-y border-border py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-8">
+    <section className="pb-8 pt-4 sm:pb-10 sm:pt-6" aria-labelledby="closer-screen-heading">
+      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-gold-bright">Worth considering instead</p>
+      <h2 id="closer-screen-heading" className="mt-3 font-body text-[1.65rem] font-semibold leading-tight text-ink">A closer option</h2>
+      <p className="mt-2 max-w-[38rem] font-body text-[15px] leading-relaxed text-ink-muted">It saves travel time, but gives up a little of the screen quality that shaped this recommendation.</p>
+      <div className="mt-5 grid gap-5 rounded-sm border border-border bg-[var(--result-panel-soft)] p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-8 sm:p-6">
         <div className="min-w-0">
-          <p className="font-display text-[1.5rem] leading-tight text-ink sm:text-[1.8rem]">{tradeoff.venueName}</p>
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-muted">
+          <p className="font-display text-[1.45rem] leading-tight text-ink sm:text-[1.75rem]">{tradeoff.venueName}</p>
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.06em] text-ink-muted">
             {tradeoff.locality} <span aria-hidden="true">·</span> {tradeoff.formatChip} <span aria-hidden="true">·</span> {tradeoff.showtime}
           </p>
         </div>
         <div className="grid grid-cols-2 divide-x divide-border border-x border-border text-center sm:min-w-[15.5rem]">
-          <TradeoffFact label="Screen" value={`${tradeoff.screenScore}/100`} />
+          <TradeoffFact label="Image quality" value={`${tradeoff.screenScore}/100`} />
           <TradeoffFact label="Away" value={`${tradeoff.outboundDurationMinutes} min`} />
         </div>
       </div>
-      <p className="mt-4 font-mono text-[11px] uppercase leading-relaxed tracking-[0.06em] text-ink-muted">
-        Save {tradeoff.outboundMinutesSaved} min outbound. Give up {tradeoff.screenPointsGivenUp} screen points.
+      <p className="mt-4 font-body text-[1rem] leading-relaxed text-ink">
+        Save <strong>{tradeoff.outboundMinutesSaved} minutes</strong> outbound. Give up <strong>{tradeoff.screenPointsGivenUp} image-quality points</strong>.
       </p>
     </section>
   );
@@ -550,12 +587,12 @@ function CounterfactualEditorialRow({
   const totalLabel = item.totalCostRupees == null ? null : `₹${item.totalCostRupees.toLocaleString("en-IN")} complete night`;
 
   return (
-    <li className={active ? "relative before:absolute before:inset-y-6 before:left-0 before:z-10 before:w-0.5 before:bg-gold" : ""}>
+    <li className={`relative overflow-hidden rounded-sm bg-[var(--result-panel-soft)] ${active ? "before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:bg-gold" : ""}`}>
       <button
         type="button"
         onClick={onSelect}
         aria-pressed={active}
-        className="grid w-full cursor-pointer grid-cols-[2.15rem_minmax(0,1fr)] gap-x-3 gap-y-5 px-0 py-7 text-left transition-colors hover:bg-[var(--result-panel-soft)] focus-visible:relative focus-visible:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-bright sm:grid-cols-[2.5rem_minmax(0,1fr)_10rem] sm:gap-x-6 sm:py-8"
+        className="grid w-full cursor-pointer grid-cols-[2.15rem_minmax(0,1fr)] gap-x-3 gap-y-5 px-4 py-6 text-left transition-colors hover:bg-ink/[0.035] focus-visible:relative focus-visible:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-bright sm:grid-cols-[2.5rem_minmax(0,1fr)_10rem] sm:gap-x-6 sm:px-5 sm:py-7"
       >
         <p className="pl-1 font-mono text-[1rem] font-medium leading-none text-ink/25">{stressRank(item.id)}</p>
         <div className="min-w-0">
@@ -584,6 +621,25 @@ function CounterfactualEditorialRow({
         </div>
       </button>
     </li>
+  );
+}
+
+function RestartPrompt({ onStartOver }: { onStartOver: () => void }) {
+  return (
+    <aside className="mt-6 flex flex-col gap-4 rounded-sm bg-bg-raised p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:p-6" aria-label="Change search details">
+      <div>
+        <p className="font-body text-[1.08rem] font-semibold text-ink">None of these plans fit?</p>
+        <p className="mt-1 font-body text-[14px] leading-relaxed text-ink-muted">Change your location, day, or priority and let Ithaka recalculate.</p>
+      </div>
+      <button
+        type="button"
+        onClick={onStartOver}
+        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start border border-ink/25 px-4 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:border-gold hover:text-gold-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright sm:self-auto"
+      >
+        <RefreshCw size={14} strokeWidth={1.7} aria-hidden="true" />
+        Change search details
+      </button>
+    </aside>
   );
 }
 
@@ -746,6 +802,17 @@ function returnStatusTone(status: ReturnStatus): string {
   if (status === "good") return "text-sea-bright";
   if (status === "stranded") return "text-wine-bright";
   return "text-ink-muted";
+}
+
+function readableSentence(value: string): string {
+  const letters = value.replace(/[^A-Za-z]/g, "");
+  if (!letters || letters !== letters.toUpperCase()) return value;
+  const sentence = value.toLowerCase().replace(/^([a-z])/, (letter) => letter.toUpperCase());
+  return sentence
+    .replace(/\bimax\b/g, "IMAX")
+    .replace(/\bmetro\b/g, "Metro")
+    .replace(/\bcab\b/g, "cab")
+    .replace(/\bncr\b/g, "NCR");
 }
 
 function formatTotalCost(result: RecommendationResult): string {
