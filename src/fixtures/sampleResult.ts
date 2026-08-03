@@ -166,6 +166,7 @@ export const sampleResult: RecommendationResult = {
     laser: "unverified",
     seventyMm: "unavailable",
   },
+  communitySignals: [],
   counterfactuals: [
     {
       id: "picture-first",

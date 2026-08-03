@@ -186,6 +186,13 @@ export interface RecommendationResult {
   screenScore: number;
   /** Source-bounded format/equipment status for the exact selected show. */
   screenProof: ScreenProof;
+  /** Human-approved, currently applicable community reports that changed (or
+   * explicitly contextualised) this exact venue/show recommendation. */
+  communitySignals: Array<{
+    summary: string;
+    sourceUrl: string;
+    scoreAdjustment: number;
+  }>;
   /** Three alternative answers to deliberately narrower questions, selected
    * only from the same viable, scored show plans. */
   counterfactuals: CounterfactualAlternative[];

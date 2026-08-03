@@ -182,6 +182,17 @@ export function ResultExperience({
                 </div>
               </div>
               <WinningReasons result={result} timeline={timeline} returnCopy={returnCopy.detail} />
+              {result.communitySignals.length > 0 && (
+                <aside className="mt-5 border-l-2 border-sea-bright bg-[var(--result-panel-soft)] px-4 py-4 sm:px-5" aria-label="Community evidence applied">
+                  <p className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-sea-bright">Community evidence applied</p>
+                  {result.communitySignals.map((signal) => (
+                    <div key={signal.sourceUrl} className="mt-2 flex flex-col gap-2 font-body text-[14px] leading-relaxed text-ink-muted sm:flex-row sm:items-baseline sm:justify-between">
+                      <p>{signal.summary}</p>
+                      <a href={signal.sourceUrl} target="_blank" rel="noreferrer" className="shrink-0 font-mono text-[9px] uppercase tracking-[0.1em] text-sea-bright">View source ↗</a>
+                    </div>
+                  ))}
+                </aside>
+              )}
               <div className="mt-6 rounded-sm border border-border bg-[var(--result-panel-soft)] p-5 sm:p-6" aria-label="How this match was scored">
                 <div className="flex items-start gap-3">
                   <BarChart3 className="mt-0.5 shrink-0 text-gold-bright" size={18} strokeWidth={1.7} aria-hidden="true" />

@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "scrape:district": "tsx scripts/scrape-district.ts",
     "discover:outreach": "tsx scripts/discover-outreach.ts",
-    "enrich:outreach": "tsx scripts/enrich-outreach.ts"
+    "enrich:outreach": "tsx scripts/enrich-outreach.ts",
+    "discover:community": "tsx scripts/discover-community-signals.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

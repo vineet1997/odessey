@@ -41,6 +41,12 @@ import showtimesData from "../../data/showtimes-live.json";
 import { scoreVenue, INTENTS, type IntentId, type ScoreResult, type UserContext } from "../scoring/score";
 import { buildRecommendationNarrative, buildValueComparison, type NarrativePlan } from "./recommendationNarrative";
 import { getScreenProof } from "./formatProfiles";
+import {
+  adjustedExperienceScore,
+  applicableCommunitySignals,
+  loadActiveCommunitySignals,
+  type ActiveCommunitySignal,
+} from "./communitySignals";
 import type { Origin, WhenChoice } from "../components/helm/types";
 import type {
   CounterfactualAlternative,
@@ -635,6 +641,7 @@ interface RoutedCandidate extends RawCandidate {
 
 interface FinalCandidate extends Omit<RoutedCandidate, "shows"> {
   show: Show;
+  communitySignals: ActiveCommunitySignal[];
 }
 
 interface Scored {
@@ -1004,6 +1011,7 @@ export async function buildRecommendation(
   const { shortlist: venues, format_scores: formatScores, format_score_default: formatScoreDefault, format_warnings: formatWarnings } =
     venuesData as unknown as VenuesCuratedData;
   const { venues: showtimesByVenue, _meta: meta } = showtimesData as unknown as ShowtimesLiveData;
+  const activeCommunitySignals = await loadActiveCommunitySignals();
 
   const nowIst = new Date(Date.now() + 330 * 60 * 1000);
   const targetDates = computeTargetDates(when, nowIst, meta.datesCovered);
@@ -1095,14 +1103,16 @@ export async function buildRecommendation(
     if (!route) continue; // this venue's live route call failed — skip, don't guess
     const viableShows = viableShowsForRoute(c.shows, when, nowMinutesOfDay, route.durationMinutes);
     for (const show of viableShows) {
+      const communitySignals = applicableCommunitySignals(activeCommunitySignals, c.venue.id, c.format, show.date, show.time);
       finalCandidates.push({
         venue: c.venue,
         coords: c.coords,
         format: c.format,
-        experienceScore: c.experienceScore,
+        experienceScore: adjustedExperienceScore(c.experienceScore, communitySignals, c.venue.id, c.format, show.date, show.time),
         districtUrl: c.districtUrl,
         show,
         route,
+        communitySignals,
       });
     }
   }
@@ -1390,6 +1400,11 @@ export async function buildRecommendation(
     score: winner.score,
     screenScore: winner.candidate.experienceScore,
     screenProof: getScreenProof(winner.candidate.venue.id, winner.candidate.format),
+    communitySignals: winner.candidate.communitySignals.map((signal) => ({
+      summary: signal.public_summary,
+      sourceUrl: signal.canonical_url,
+      scoreAdjustment: signal.score_adjustment,
+    })),
     counterfactuals: buildCounterfactuals(recommendationPool, winner),
     // Fallback covers the type's null possibility (shouldn't happen for the 15
     // curated venues in practice) — a generic search beats a dead button.

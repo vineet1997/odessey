@@ -1,0 +1,109 @@
+name: Discover community signals
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/discover-community-signals.yml"
+      - "scripts/discover-community-signals.ts"
+      - "data/venues-curated.json"
+      - "package.json"
+      - "package-lock.json"
+  schedule:
+    # Daily, deliberately off the top-of-hour GitHub Actions rush.
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      release_title:
+        description: "Optional film title. Enables one extra, tightly scoped r/bollywood RSS search."
+        required: false
+        type: string
+      dry_run:
+        description: "Filter candidates but do not write to Supabase."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: discover-community-signals
+  cancel-in-progress: false
+
+jobs:
+  verify-rss-dry-run:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify the public Reddit feeds without writing
+        run: npm run discover:community -- --dry-run
+
+  discover-daily:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run daily RSS discovery
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            npm run discover:community -- --dry-run
+          else
+            npm run discover:community
+          fi
+
+  release-rss-search:
+    if: github.event_name == 'workflow_dispatch' && inputs.release_title != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run optional release RSS search
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RELEASE_TITLE: ${{ inputs.release_title }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            npm run discover:community -- --release "$RELEASE_TITLE" --release-only --dry-run
+          else
+            npm run discover:community -- --release "$RELEASE_TITLE" --release-only
+          fi

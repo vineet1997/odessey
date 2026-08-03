@@ -16,12 +16,16 @@ import {
 import { trackEvent } from "./lib/telemetry";
 
 const MadePage = lazy(() => import("./components/MadePage").then((module) => ({ default: module.MadePage })));
+const CommunityDataPage = lazy(() => import("./components/CommunityDataPage").then((module) => ({ default: module.CommunityDataPage })));
 
 type Stage = "prologue" | "helm" | "crossing" | "result" | "error";
 
 function App() {
   if (window.location.pathname === "/made") {
     return <Suspense fallback={<div className="grid min-h-screen place-items-center bg-bg font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">Opening the build record</div>}><MadePage /></Suspense>;
+  }
+  if (window.location.pathname === "/community-data") {
+    return <Suspense fallback={<div className="grid min-h-screen place-items-center bg-bg font-mono text-[10px] uppercase tracking-[0.18em] text-gold-bright">Opening the community record</div>}><CommunityDataPage /></Suspense>;
   }
   const [stage, setStage] = useState<Stage>(() =>
     // sessionStorage, not localStorage: clears per browser tab/session, so a
