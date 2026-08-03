@@ -64,11 +64,10 @@ export function buildReturnCopy(leg: ReturnLeg, _theatreExitTime: string): Retur
   const hasCabEstimate = leg.cabEstimateAvailable !== false && Number.isFinite(leg.costRupees) && leg.costRupees > 0;
   if (leg.status === "good" && hasFirstTransit) {
     const departure = formatReturnTime(leg.departureTime!);
-    const fare = `₹${leg.costRupees.toLocaleString("en-IN")}${leg.costIsEstimate ? " EST." : ""}`;
     return {
-      heading: "METRO HOME",
-      detail: `${leg.lineLabel} · ${leg.departureStop} · ${departure} · ${leg.durationMinutes} MIN · ${fare}`,
-      checkedValue: `METRO · ${leg.lineLabel} · ${departure}`,
+      heading: "FIRST TRANSIT STEP FOUND",
+      detail: `FIRST SCHEDULED STEP · ${leg.lineLabel} · ${leg.departureStop} · DEPARTS ${departure}`,
+      checkedValue: `FIRST STEP · ${leg.lineLabel} · ${departure}`,
     };
   }
   if (leg.status === "stranded") {
@@ -76,7 +75,7 @@ export function buildReturnCopy(leg: ReturnLeg, _theatreExitTime: string): Retur
       ? "METRO HAS STOPPED FOR THE NIGHT"
       : "NO METRO-ONLY CONNECTION HOME";
     return {
-      heading: "CAB HOME",
+      heading: "CAB ESTIMATE",
       detail: hasCabEstimate
         ? `${metroState} · CAB ≈₹${leg.costRupees.toLocaleString("en-IN")} · ≈${leg.durationMinutes} MIN`
         : `${metroState} · CAB PRICE UNAVAILABLE`,
@@ -93,9 +92,9 @@ export function buildReturnCopy(leg: ReturnLeg, _theatreExitTime: string): Retur
     };
   }
   return {
-    heading: "METRO CHECKED",
-    detail: "METRO CHECKED",
-    checkedValue: "METRO CHECKED",
+    heading: "TRANSIT CHECKED",
+    detail: "TRANSIT CHECKED · SCHEDULED STEP DETAILS INCOMPLETE",
+    checkedValue: "TRANSIT CHECKED",
   };
 }
 

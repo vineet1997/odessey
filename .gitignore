@@ -11,6 +11,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Working outreach research can include private notes and contact details.
+data/distribution/
+
 # Editor/OS
 .DS_Store
 

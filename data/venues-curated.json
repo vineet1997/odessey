@@ -238,6 +238,7 @@
    "confidence": "UNCONFIRMED",
    "formats": [
     "RECLINER LASER ATMOS",
+    "RECLINER LASER ATMOS 2D",
     "LASER"
    ],
    "editorial_verdict": "Recliner seating plus laser projection - a comfortable, unpretentious Gurugram option.",
@@ -297,6 +298,7 @@
    "formats": [
     "PXL",
     "LUXE",
+    "LUXE 2D",
     "4K LASER PROJECTION",
     "DOLBY 7.1"
    ],
@@ -317,7 +319,8 @@
    "confidence": "UNCONFIRMED",
    "formats": [
     "EMINENCE CUT RECLINER",
-    "4K DOLBY"
+    "4K DOLBY",
+    "4K DOLBY 2D"
    ],
    "editorial_verdict": "The one recognizable option in Ghaziabad - honest mid-tier pick, not a showpiece.",
    "selection_reason": "Included below the usual Tier B cutoff deliberately: Ghaziabad localities need SOME answer, and this is the best available. Faridabad has no equivalent and is a known gap (see known_coverage_gaps).",

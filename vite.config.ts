@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import routeHandler from "./api/route";
+import eventHandler from "./api/event";
 
 /** Vercel executes api/route.ts in production, but plain `vite` does not.
  * Mount the same handler in development so `npm run dev` exercises the real
@@ -35,6 +36,34 @@ function localRouteApi(): Plugin {
   };
 }
 
+/** Mirrors the production measurement route in Vite development. It will
+ * return 503 until the server-only Supabase variables are set locally. */
+function localEventApi(): Plugin {
+  return {
+    name: "ithaka-local-event-api",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use("/api/event", async (req, res) => {
+        try {
+          const body = await readBody(req);
+          const request = new Request("http://localhost/api/event", {
+            method: req.method,
+            headers: requestHeaders(req),
+            ...(body.byteLength > 0 ? { body } : {}),
+          });
+          const response = await eventHandler(request);
+          res.statusCode = response.status;
+          response.headers.forEach((value, key) => res.setHeader(key, value));
+          res.end(Buffer.from(await response.arrayBuffer()));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          sendJson(res, 500, { error: `Local event middleware failed: ${message}` });
+        }
+      });
+    },
+  };
+}
+
 async function readBody(req: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
@@ -58,7 +87,7 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), localRouteApi()],
+  plugins: [react(), localRouteApi(), localEventApi()],
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 5173,
   },

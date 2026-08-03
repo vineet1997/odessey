@@ -7,9 +7,10 @@ import { ShareArtifact } from "./ShareArtifact";
 interface ShareComposerProps {
   model: ShareArtifactModel;
   onClose: () => void;
+  onShared: () => void;
 }
 
-export function ShareComposer({ model, onClose }: ShareComposerProps) {
+export function ShareComposer({ model, onClose, onShared }: ShareComposerProps) {
   const artifactRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
   const [blob, setBlob] = useState<Blob>();
@@ -65,6 +66,7 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
     if (navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: "My Odyssey plan", text: model.caption });
+        onShared();
         return;
       } catch (reason) {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
@@ -72,6 +74,7 @@ export function ShareComposer({ model, onClose }: ShareComposerProps) {
       }
     }
     downloadShareArtifact(blob, model.filename);
+    onShared();
   }
 
   async function copyCaption() {

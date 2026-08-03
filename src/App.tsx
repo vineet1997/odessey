@@ -1,4 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Analytics } from "@vercel/analytics/react";
 import { Prologue } from "./components/Prologue";
@@ -13,6 +13,7 @@ import {
   type DossierEntry,
   type RecommendationPreferences,
 } from "./lib/buildRecommendation";
+import { trackEvent } from "./lib/telemetry";
 
 const MadePage = lazy(() => import("./components/MadePage").then((module) => ({ default: module.MadePage })));
 
@@ -37,6 +38,10 @@ function App() {
   const [preferences, setPreferences] = useState<RecommendationPreferences>(DEFAULT_RECOMMENDATION_PREFERENCES);
   const [pendingPreferences, setPendingPreferences] = useState<RecommendationPreferences | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    trackEvent("app_opened", { path: window.location.pathname });
+  }, []);
 
   useLayoutEffect(() => {
     if (stage !== "result") return;
@@ -87,7 +92,7 @@ function App() {
   if (stage === "prologue") {
     return (
       <>
-        <Prologue onComplete={() => setStage("helm")} />
+        <Prologue onComplete={() => { trackEvent("prologue_completed"); setStage("helm"); }} />
         <Analytics />
       </>
     );
@@ -98,6 +103,7 @@ function App() {
       <>
         <Helm
           onComplete={(helmAnswers) => {
+            trackEvent("search_submitted", { intent: helmAnswers.intentId, when: helmAnswers.when });
             setAnswers(helmAnswers);
             setStage("crossing");
           }}
@@ -116,6 +122,7 @@ function App() {
           intentId={answers.intentId}
           preferences={pendingPreferences ?? preferences}
           onComplete={(computed, dossierEntries) => {
+            trackEvent("recommendation_ready", { venue: computed.venueName, format: computed.formatChip, intent: answers.intentId });
             setResult(computed);
             setDossier(dossierEntries);
             if (pendingPreferences) setPreferences(pendingPreferences);

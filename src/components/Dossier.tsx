@@ -22,20 +22,46 @@ interface DossierProps {
  */
 export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) {
   const [researchOpen, setResearchOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
 
   return (
     <div className="flex w-full flex-col gap-6">
       {/* Value comparison — Worth Every Rupee only, when it fires. */}
       {result.valueComparison && <ValueComparisonBlock valueComparison={result.valueComparison} />}
 
-      <section className="border-t border-border pt-8 sm:pt-10" aria-labelledby="alternatives-heading">
-        <p id="alternatives-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Alternatives, mapped</p>
+      <section aria-labelledby="evidence-heading">
+        <p id="evidence-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted"><span className="mr-3 text-gold-bright">04</span>Data &amp; certainty</p>
         <p className="mt-3 max-w-[48rem] font-body text-[1rem] leading-relaxed text-ink">
-          Want to look past our pick? We researched {result.provenance.plansScored} possible plans across {result.provenance.venuesChecked} venues. Every one is on the map.
+          What was observed, what was estimated, and how broad the comparison was.
         </p>
-        <div className="mt-6">
-          <MapExplorer origin={origin} venues={dossier} />
-        </div>
+
+        <EvidenceReceipt result={result} />
+
+        <button
+          type="button"
+          onClick={() => setMapOpen((open) => !open)}
+          aria-expanded={mapOpen}
+          aria-controls="candidate-map"
+          className="group mt-6 flex min-h-[5.25rem] w-full cursor-pointer items-center justify-between border-y border-border px-0 text-left transition-colors duration-150 hover:bg-ink/[0.025] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+        >
+          <span className="flex flex-col gap-1">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-ink">{mapOpen ? "Close candidate map" : "Open candidate map"}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
+              {result.provenance.plansScored} plans across {result.provenance.venuesChecked} venues
+            </span>
+          </span>
+          <ChevronDown
+            size={16}
+            strokeWidth={1.5}
+            className={`shrink-0 text-ink-muted transition-transform duration-150 group-hover:translate-y-1 group-hover:text-ink ${mapOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {mapOpen && (
+          <div id="candidate-map" className="mt-6">
+            <MapExplorer origin={origin} venues={dossier} />
+          </div>
+        )}
       </section>
 
       {/* The map establishes the research surface. The ledger is optional detail. */}
@@ -81,6 +107,38 @@ export function Dossier({ result, dossier, origin, onStartOver }: DossierProps) 
   );
 }
 
+function EvidenceReceipt({ result }: { result: RecommendationResult }) {
+  const routeSource = result.evidence.outbound.source === "live"
+    ? `Live · ${result.evidence.outbound.durationMinutes} min outbound`
+    : `Estimated · ≈${result.evidence.outbound.durationMinutes} min outbound`;
+  const returnSource = result.evidence.return.status === "live"
+    ? "First scheduled transit step found"
+    : result.evidence.return.status === "no-route"
+      ? "No transit route found · cab estimated"
+      : "Transit unverified · cab estimated";
+
+  return (
+    <div className="mt-6 border-y border-border">
+      <p className="py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-ink">Data &amp; certainty</p>
+      <dl className="grid gap-px border-t border-border bg-border sm:grid-cols-2">
+        <EvidenceFact label="Showtimes" value={`${result.evidence.showtimes.source} · ${result.evidence.showtimes.refreshedAtLabel}`} />
+        <EvidenceFact label="Outbound" value={routeSource} />
+        <EvidenceFact label="Return" value={returnSource} />
+        <EvidenceFact label="Comparison" value={`${result.provenance.plansScored} plans · ${result.provenance.venuesChecked} venues`} />
+      </dl>
+    </div>
+  );
+}
+
+function EvidenceFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-bg px-4 py-4">
+      <dt className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-muted">{label}</dt>
+      <dd className="mt-2 font-mono text-[11.5px] uppercase leading-relaxed tracking-[0.045em] text-ink">{value}</dd>
+    </div>
+  );
+}
+
 function ResearchReceipt({ onStartOver }: { onStartOver: () => void }) {
   return (
     <footer className="pt-3" data-testid="research-receipt">
@@ -94,9 +152,6 @@ function ResearchReceipt({ onStartOver }: { onStartOver: () => void }) {
           Start a new search
         </button>
       </div>
-      <p className="build-credit mt-10 text-center text-sm text-ink-muted">
-        Built with <span className="build-credit__struck">obsessive energy</span> and coffee. <a className="build-credit__link" href="/made">Learn more ↗</a>
-      </p>
     </footer>
   );
 }
@@ -168,9 +223,9 @@ function DossierRow({ entry }: { entry: DossierEntry }) {
 }
 
 function returnEvidenceLabel(evidence: DossierEntry["returnEvidence"]): string {
-  if (evidence === "live") return "METRO ✓";
-  if (evidence === "no-route") return "METRO × · CAB";
-  return "METRO ? · CAB EST.";
+  if (evidence === "live") return "FIRST TRANSIT STEP FOUND";
+  if (evidence === "no-route") return "NO TRANSIT ROUTE · CAB EST.";
+  return "TRANSIT UNVERIFIED · CAB EST.";
 }
 
 export default Dossier;

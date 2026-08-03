@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "scrape:district": "tsx scripts/scrape-district.ts"
+    "scrape:district": "tsx scripts/scrape-district.ts",
+    "discover:outreach": "tsx scripts/discover-outreach.ts",
+    "enrich:outreach": "tsx scripts/enrich-outreach.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

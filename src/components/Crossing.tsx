@@ -66,7 +66,11 @@ export function Crossing({ origin, when, intentId, preferences, onComplete, onEr
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
-  const logSteps = ["CHECKING SCREENS", WHEN_LOG_LABEL[when], "TRAVEL TIMES", "ROUTE HOME"];
+  // This is a compact receipt for work that buildRecommendation actually does:
+  // it reads the candidate set, narrows it to the requested shows, scores a
+  // complete evening, then evaluates the return. It never pretends to expose
+  // hidden model reasoning.
+  const logSteps = ["CHECKING CINEMAS", WHEN_LOG_LABEL[when], "SCORING COMPLETE NIGHTS", "CHECKING THE WAY HOME"];
 
   useEffect(() => {
     let cancelled = false;

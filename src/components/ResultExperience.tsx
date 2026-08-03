@@ -7,6 +7,8 @@ import type { IntentId } from "../scoring/score";
 import type { ProofStatus, RecommendationResult, ReturnStatus } from "../types/recommendation";
 import { buildShareArtifactModel } from "../lib/shareArtifact";
 import { buildReturnCopy } from "../lib/recommendationNarrative";
+import { trackEvent } from "../lib/telemetry";
+import { FeedbackPrompt } from "./FeedbackPrompt";
 
 const ShareComposer = lazy(() =>
   import("./ShareComposer").then((module) => ({ default: module.ShareComposer }))
@@ -65,12 +67,18 @@ export function ResultExperience({
   const counterfactuals = makeCounterfactuals(result);
   const returnTone = returnStatusTone(result.journey.return.status);
   const returnCopy = buildReturnCopy(result.journey.return, result.evening.theatreExit.time);
+  const totalCostLabel = formatTotalCost(result);
+  const returnConfidence = returnConfidenceLabel(result);
   const shareModel = useMemo(() => buildShareArtifactModel(result, origin), [result, origin]);
+  const openShare = () => {
+    trackEvent("share_opened", { venue: result.venueName, format: result.formatChip });
+    setShareOpen(true);
+  };
 
   return (
-    <main className="result-experience min-h-screen bg-bg pb-32 text-ink md:pb-0" data-testid="result-experience">
-      <div className="mx-auto grid max-w-[1760px] min-[1120px]:grid-cols-[minmax(470px,46%)_minmax(0,1fr)]">
-        <section className="relative h-[64svh] min-h-[520px] max-h-[720px] overflow-hidden border-b border-border min-[1120px]:sticky min-[1120px]:top-0 min-[1120px]:h-screen min-[1120px]:max-h-none min-[1120px]:border-b-0 min-[1120px]:border-r">
+    <main className="result-experience min-h-screen overflow-x-clip bg-bg pb-32 text-ink md:pb-0" data-testid="result-experience">
+      <div className="mx-auto grid w-full min-w-0 max-w-[1760px] min-[1120px]:grid-cols-[minmax(470px,46%)_minmax(0,1fr)]">
+        <section className="relative min-w-0 h-[44svh] min-h-[390px] max-h-[520px] overflow-hidden border-b border-border min-[1120px]:sticky min-[1120px]:top-0 min-[1120px]:h-screen min-[1120px]:max-h-none min-[1120px]:border-b-0 min-[1120px]:border-r">
           <picture className="absolute inset-0">
             <source media="(min-width: 1120px)" srcSet="/result-helmet-wide.jpg" />
             <img
@@ -87,39 +95,46 @@ export function ResultExperience({
               <span>{result.freshnessLabel}</span>
             </div>
 
-            <div className="max-w-[35rem] pt-14 min-[1120px]:pt-0">
-              <p className="mb-4 font-mono text-[10.5px] uppercase tracking-[0.18em] text-gold-bright">{result.intentLabel}</p>
-              <h1 className="max-w-[12ch] font-display text-[clamp(2.4rem,4.2vw,4.25rem)] leading-[1.04] text-ink [text-wrap:balance]">
+            <div className="max-w-[35rem] pt-5 min-[1120px]:pt-0">
+              <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.18em] text-gold-bright">Your answer / {result.intentLabel}</p>
+              <h1 className="max-w-[14ch] font-display text-[clamp(2rem,4.2vw,4.25rem)] leading-[1.04] text-ink [text-wrap:balance]">
                 {result.venueName}
               </h1>
-              <ScreenProofList score={result.screenScore} proof={result.screenProof} />
+              <p className="mt-3 max-w-[31rem] font-body text-[0.98rem] italic leading-relaxed text-ink/90 sm:text-[1.15rem]">
+                {result.narrative.selectedFormat.judgment}
+              </p>
+              <FormatProofList format={result.formatChip} proof={result.screenProof} />
             </div>
 
-            <div className="mt-7 border-t border-ink/20 pt-4">
+            <div className="mt-4 border-t border-ink/20 pt-3 min-[1120px]:mt-7 min-[1120px]:pt-4">
               <div className="grid grid-cols-3 gap-x-4 sm:gap-x-8">
-                <Fact label="Showtime" value={result.showtime} />
-                <Fact label="Ticket" value={result.priceLabel} />
-                <Fact label={result.evening.homeArrival ? "Home" : "Est. home"} value={timeline.homeAt} tone={returnTone} />
+                <Fact label={result.dateLabel} value={result.showtime} />
+                <Fact label="Door to door" value={totalCostLabel} />
+                <Fact label="Return check" value={returnConfidence} tone={returnTone} />
               </div>
+              <p className="mt-3 font-mono text-[11px] uppercase leading-relaxed tracking-[0.08em] text-ink/65 min-[1120px]:mt-5">
+                Compared {result.provenance.plansScored} complete plans across {result.provenance.venuesChecked} venues
+              </p>
             </div>
           </div>
         </section>
 
         <section className="relative min-w-0 bg-bg" aria-label="Recommendation details">
           <div className="mx-auto w-full max-w-[880px] px-5 py-8 sm:px-8 sm:py-10 min-[1120px]:px-10 min-[1120px]:py-12 min-[1440px]:px-14">
-            <div className="mb-6 hidden justify-end md:flex" aria-label="Primary actions">
+            <div className="mb-8 hidden items-center justify-between gap-4 border-b border-border pb-5 md:flex" aria-label="Primary actions">
+              <p className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-ink-muted sm:block">Recommendation ready</p>
               <div className="flex shrink-0 gap-2">
-                <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
-                <ActionButton onClick={() => setShareOpen(true)} label="Share brief" icon={<Share2 size={14} />} />
-                <ActionLink href={result.districtUrl} variant="primary" label="Book" icon={<ExternalLink size={14} />} />
+                <ActionLink href={result.directionsUrl} onOpen={() => trackEvent("directions_opened", { venue: result.venueName })} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
+                <ActionButton onClick={openShare} label="Share brief" icon={<Share2 size={14} />} />
+                <ActionLink href={result.districtUrl} onOpen={() => trackEvent("booking_opened", { venue: result.venueName, format: result.formatChip })} variant="primary" label={`Check ${result.showtime}`} icon={<ExternalLink size={14} />} />
               </div>
             </div>
 
-            <section aria-labelledby="evening-heading" className="border-t border-border py-7 sm:py-8" data-testid="evening-timeline">
+            <section aria-labelledby="evening-heading" className="pb-9 sm:pb-11" data-testid="evening-timeline">
               <div className="mb-7 flex items-center justify-between gap-5">
                 <div className="flex items-center gap-3">
-                  <span aria-hidden="true" className="h-px w-8 bg-gold-bright" />
-                  <p id="evening-heading" className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gold-bright">Proposed plan</p>
+                  <span aria-hidden="true" className="font-mono text-[10px] text-gold-bright">01</span>
+                  <p id="evening-heading" className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-gold-bright">Tonight, mapped</p>
                 </div>
                 <button
                   type="button"
@@ -141,7 +156,7 @@ export function ResultExperience({
                 <TimelineStop time={timeline.arriveVenue} label="At the theatre" />
                 <TimelineStop time={timeline.showStarts} label="Film starts" emphasized />
                 <TimelineStop time={timeline.filmEnds} label="Film ends" />
-                <TimelineStop time={timeline.homeAt} label="Home" returnTone={returnTone} />
+                <TimelineStop time={timeline.homeAt} label="Est. home" returnTone={returnTone} />
               </ol>
               <RouteDecisionModule result={result} heading={returnCopy.heading} detail={returnCopy.detail} />
               <ProgressiveControls
@@ -153,17 +168,20 @@ export function ResultExperience({
             </section>
 
             <section className="border-t border-border py-9 sm:py-11" aria-labelledby="why-heading">
-              <div className="mb-7 grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <div className="mb-7">
                 <div className="min-w-0">
-                  <p id="why-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">Why this pick</p>
+                  <p id="why-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted"><span className="mr-3 text-gold-bright">02</span>Why it won</p>
                   <p className="mt-3 font-mono text-[13px] font-medium uppercase leading-relaxed tracking-[0.06em] text-ink sm:text-[14px]">{result.narrative.outcome.lead}</p>
                 </div>
-                <div className="shrink-0 sm:text-right">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted">Plan score</p>
-                  <p className="mt-2 font-mono text-[1.65rem] font-medium leading-none tabular-nums text-ink">{Math.round(result.score.totalScore * 100)}/100</p>
-                </div>
               </div>
-              <ScoreDimensions result={result} />
+              <WinningReasons result={result} timeline={timeline} returnCopy={returnCopy.detail} />
+              <details className="group mt-7 border-t border-border pt-4">
+                <summary className="cursor-pointer list-none font-mono text-[10px] uppercase tracking-[0.11em] text-ink-muted transition-colors hover:text-gold-bright">
+                  <span className="group-open:hidden">See score balance</span>
+                  <span className="hidden group-open:inline">Hide score balance</span>
+                </summary>
+                <div className="mt-5"><ScoreDimensions result={result} /></div>
+              </details>
             </section>
 
             {result.fullEpicTradeoff && <FullEpicTradeoff result={result} />}
@@ -171,8 +189,9 @@ export function ResultExperience({
             <section className="border-t border-border py-9 sm:py-11" aria-labelledby="counterfactual-heading" data-testid="decision-stress-test">
               <div>
                 <h2 id="counterfactual-heading" className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-muted">
-                  Change the priority
+                  <span className="mr-3 text-gold-bright">03</span>Stress-test the brief
                 </h2>
+                <p className="mt-3 max-w-[39rem] font-body text-[1rem] leading-relaxed text-ink-muted">Same candidate set, deliberately different priorities. Pick a lens to recalculate the answer.</p>
               </div>
               <ol className="mt-6 divide-y divide-border border-y border-border">
                 {counterfactuals.map((item) => (
@@ -189,18 +208,22 @@ export function ResultExperience({
               </ol>
             </section>
 
-            <section className="pt-9 sm:pt-11" aria-label="Research and controls">
+            <section className="border-t border-border pt-9 sm:pt-11" aria-label="Research and controls">
               <Dossier result={result} dossier={dossier} origin={origin} onStartOver={onStartOver} />
             </section>
+            <FeedbackPrompt context={{ venue: result.venueName, format: result.formatChip, intent: activeIntent }} />
+            <footer className="build-credit border-t border-border pb-4 pt-10 text-center text-sm text-ink-muted">
+              Built with <span className="build-credit__struck">obsessive energy</span> and coffee. <a className="build-credit__link" href="/made">Learn more ↗</a>
+            </footer>
           </div>
         </section>
       </div>
 
       <div className="result-mobile-actions fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 px-3 pt-3 backdrop-blur md:hidden" aria-label="Primary actions">
-        <div className="mx-auto grid max-w-[560px] grid-cols-[1fr_.75fr_1.35fr] gap-2">
-          <ActionLink href={result.directionsUrl} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
-          <ActionButton onClick={() => setShareOpen(true)} label="Share" icon={<Share2 size={14} />} />
-          <ActionLink href={result.districtUrl} variant="primary" label="Book on District" icon={<ExternalLink size={14} />} />
+        <div className="mx-auto grid max-w-[560px] grid-cols-[minmax(0,1fr)_minmax(0,.75fr)_minmax(0,1.35fr)] gap-2">
+          <ActionLink href={result.directionsUrl} onOpen={() => trackEvent("directions_opened", { venue: result.venueName })} variant="quiet" label="Directions" icon={<MapPinned size={15} />} />
+          <ActionButton onClick={openShare} label="Share" icon={<Share2 size={14} />} />
+          <ActionLink href={result.districtUrl} onOpen={() => trackEvent("booking_opened", { venue: result.venueName, format: result.formatChip })} variant="primary" label="Check on District" icon={<ExternalLink size={14} />} />
         </div>
       </div>
       {shareOpen && (
@@ -211,29 +234,26 @@ export function ResultExperience({
             </div>
           }
         >
-          <ShareComposer model={shareModel} onClose={() => setShareOpen(false)} />
+          <ShareComposer model={shareModel} onClose={() => setShareOpen(false)} onShared={() => trackEvent("share_completed", { venue: result.venueName })} />
         </Suspense>
       )}
     </main>
   );
 }
 
-function ScreenProofList({
-  score,
+function FormatProofList({
+  format,
   proof,
 }: {
-  score: number;
+  format: string;
   proof: RecommendationResult["screenProof"];
 }) {
   return (
-    <div className="mt-6 font-mono uppercase">
+    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono uppercase min-[1120px]:mt-6">
+      <p className="border border-gold/60 px-2.5 py-1 text-[10px] tracking-[0.12em] text-gold-bright">{format}</p>
       <dl>
-        <div>
-          <dt className="text-[10px] tracking-[0.14em] text-ink/55">Screen score</dt>
-          <dd className="mt-2 text-[1.7rem] font-medium leading-none tabular-nums text-ink">{score}/100</dd>
-        </div>
         {proof.imax === "confirmed" && (
-          <div className="mt-5 flex w-24 flex-col gap-2.5">
+          <div className="flex gap-4">
             <ProofFact label="IMAX" status={proof.imax} />
             <ProofFact label="Laser" status={proof.laser} />
             <ProofFact label="70mm" status={proof.seventyMm} />
@@ -249,9 +269,9 @@ function ProofFact({ label, status }: { label: string; status: ProofStatus }) {
   const spokenStatus = status === "confirmed" ? "confirmed" : status === "unavailable" ? "not available" : "not verified";
   const tone = status === "confirmed" ? "text-gold-bright" : status === "unavailable" ? "text-ink/70" : "text-ink-muted";
   return (
-    <div className="flex items-baseline justify-between gap-3" aria-label={`${label}: ${spokenStatus}`}>
+    <div className="flex items-baseline gap-1.5" aria-label={`${label}: ${spokenStatus}`}>
       <dt className="text-[10px] tracking-[0.12em] text-ink/60">{label}</dt>
-      <dd aria-hidden="true" className={`text-[1rem] font-medium leading-none ${tone}`}>{symbol}</dd>
+      <dd aria-hidden="true" className={`text-[0.85rem] font-medium leading-none ${tone}`}>{symbol}</dd>
     </div>
   );
 }
@@ -260,7 +280,7 @@ function Fact({ label, value, tone = "text-ink" }: { label: string; value: strin
   return (
     <div className="min-w-0">
       <p className="font-mono text-[10px] uppercase tracking-[0.13em] text-ink/55">{label}</p>
-      <p className={`mt-1.5 truncate font-mono text-[12px] font-medium uppercase tracking-[0.04em] sm:text-[13px] ${tone}`}>{value}</p>
+      <p className={`mt-1.5 break-words font-mono text-[11px] font-medium uppercase leading-snug tracking-[0.035em] sm:text-[13px] ${tone}`}>{value}</p>
     </div>
   );
 }
@@ -400,10 +420,56 @@ function TimelineStop({
     <li className="relative grid grid-cols-[1.55rem_1fr] items-start gap-3 pb-5 last:pb-0 sm:block sm:pb-0 sm:text-center">
       <span className={`relative z-10 mt-1 block h-[0.65rem] w-[0.65rem] rounded-full border ${emphasized ? "border-gold bg-gold" : "border-ink-muted bg-bg"} sm:mx-auto`} />
       <div className="sm:mt-3">
-        <p className={`font-mono text-[13px] font-medium uppercase tracking-[0.055em] ${label === "Home" ? returnTone : "text-ink"}`}>{time}</p>
+        <p className={`font-mono text-[13px] font-medium uppercase tracking-[0.055em] ${label.toLowerCase().includes("home") ? returnTone : "text-ink"}`}>{time}</p>
         <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">{label}</p>
       </div>
     </li>
+  );
+}
+
+function WinningReasons({
+  result,
+  timeline,
+  returnCopy,
+}: {
+  result: RecommendationResult;
+  timeline: { homeAt: string };
+  returnCopy: string;
+}) {
+  const total = `${result.journey.outbound.costIsEstimate || result.journey.return.costIsEstimate ? "≈" : ""}₹${result.journey.totalCostRupees.toLocaleString("en-IN")}`;
+  const returnLabel = `Est. home ${timeline.homeAt}`;
+  const reasons = [
+    {
+      number: "01",
+      label: "Screen, evidenced",
+      value: result.formatChip,
+      detail: formatConfidenceCopy(result),
+    },
+    {
+      number: "02",
+      label: "The evening works",
+      value: `${result.journey.outbound.durationMinutes} min there · ${returnLabel}`,
+      detail: returnCopy,
+    },
+    {
+      number: "03",
+      label: "Whole-night value",
+      value: `${total} door to door`,
+      detail: result.narrative.outcome.receipt,
+    },
+  ];
+
+  return (
+    <ol className="grid divide-y divide-border border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      {reasons.map((reason) => (
+        <li key={reason.number} className="min-h-[12rem] px-0 py-5 sm:px-5 sm:first:pl-0 sm:last:pr-0">
+          <p className="font-mono text-[10px] tracking-[0.12em] text-gold-bright">{reason.number}</p>
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.11em] text-ink-muted">{reason.label}</p>
+          <p className="mt-2 font-mono text-[12px] font-medium uppercase leading-relaxed tracking-[0.045em] text-ink">{reason.value}</p>
+          <p className="mt-3 font-body text-[14px] leading-relaxed text-ink-muted">{reason.detail}</p>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -476,7 +542,10 @@ function CounterfactualEditorialRow({
   active: boolean;
   onSelect: () => void;
 }) {
-  const displayMetric = item.metric ?? { label: "The trade-off", value: item.detail ?? item.reason ?? "See the alternative brief." };
+  const rawMetric = item.metric ?? { label: "The trade-off", value: item.detail ?? item.reason ?? "See the alternative brief." };
+  const displayMetric = item.id === "earliest-home"
+    ? { label: "Est. home", value: rawMetric.value.startsWith("≈") ? rawMetric.value : `≈${rawMetric.value}` }
+    : rawMetric;
   const displayReturnStatus = item.returnEvidence ? returnEvidenceLabel(item.returnEvidence) : null;
   const totalLabel = item.totalCostRupees == null ? null : `₹${item.totalCostRupees.toLocaleString("en-IN")} complete night`;
 
@@ -555,14 +624,15 @@ function intentForCounterfactual(id?: string): IntentId | undefined {
   return undefined;
 }
 
-function ActionLink({ href, label, icon, variant }: { href: string; label: string; icon: React.ReactNode; variant: "primary" | "quiet" }) {
+function ActionLink({ href, label, icon, variant, onOpen }: { href: string; label: string; icon: React.ReactNode; variant: "primary" | "quiet"; onOpen?: () => void }) {
   const primary = variant === "primary";
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex min-h-11 items-center justify-center gap-2 border px-3 font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] transition-colors sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright ${
+      onClick={onOpen}
+      className={`inline-flex min-h-11 min-w-0 items-center justify-center gap-2 border px-2 text-center font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] transition-colors sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright ${
         primary
           ? "border-gold bg-gold text-bg hover:border-gold-bright hover:bg-gold-bright"
           : "border-border bg-bg text-ink hover:border-ink/30 hover:bg-[var(--result-panel-soft)]"
@@ -579,7 +649,7 @@ function ActionButton({ onClick, label, icon }: { onClick: () => void; label: st
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex min-h-11 items-center justify-center gap-2 border border-border bg-bg px-3 font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] text-ink transition-colors hover:border-ink/30 hover:bg-[var(--result-panel-soft)] sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
+      className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 border border-border bg-bg px-2 text-center font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.1em] text-ink transition-colors hover:border-ink/30 hover:bg-[var(--result-panel-soft)] sm:px-4 sm:text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-bright"
     >
       {label}
       {icon}
@@ -606,9 +676,7 @@ function makeTimeline(result: RecommendationResult): {
     showStarts,
     filmEnds,
     returnStarts,
-    homeAt: scheduledHome
-      ? scheduledHome.toUpperCase()
-      : `≈${addMinutes(returnStarts, result.journey.return.durationMinutes).toUpperCase()}`,
+    homeAt: `≈${(scheduledHome ?? addMinutes(returnStarts, result.journey.return.durationMinutes)).toString().toUpperCase()}`,
   };
 }
 
@@ -680,8 +748,42 @@ function returnStatusTone(status: ReturnStatus): string {
   return "text-ink-muted";
 }
 
+function formatTotalCost(result: RecommendationResult): string {
+  const estimated = result.journey.outbound.costIsEstimate || result.journey.return.costIsEstimate;
+  return `${estimated ? "≈" : ""}₹${result.journey.totalCostRupees.toLocaleString("en-IN")}`;
+}
+
+function returnConfidenceLabel(result: RecommendationResult): string {
+  if (result.evidence.return.status === "live") return "First transit found";
+  if (result.evidence.return.status === "no-route") {
+    return result.journey.return.cabEstimateAvailable === false
+      ? "Cab price unavailable"
+      : `Cab ≈₹${result.journey.return.costRupees.toLocaleString("en-IN")}`;
+  }
+  return "Return unverified";
+}
+
+function formatConfidenceCopy(result: RecommendationResult): string {
+  const status = (label: string, value: ProofStatus): string => {
+    if (value === "confirmed") return `${label} confirmed`;
+    if (value === "unavailable") return `${label} not available`;
+    return `${label} unverified`;
+  };
+  if (result.screenProof.imax === "confirmed") {
+    return [
+      "IMAX confirmed for this presentation.",
+      status("Laser", result.screenProof.laser),
+      status("70mm", result.screenProof.seventyMm),
+    ].join(" · ");
+  }
+  return [
+    `Listed as ${result.formatChip}.`,
+    result.narrative.selectedFormat.caveat ?? "Projector details are unverified.",
+  ].join(" ");
+}
+
 function returnEvidenceLabel(status: "live" | "no-route" | "unverified"): string {
-  if (status === "live") return "Transit ✓";
+  if (status === "live") return "First transit found";
   if (status === "no-route") return "Transit × · Cab";
   return "Transit ? · Cab est.";
 }

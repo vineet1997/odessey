@@ -203,8 +203,8 @@ describe("return-state copy", () => {
       }),
       "9:37 PM"
     );
-    expect(copy.heading).toBe("METRO HOME");
-    expect(copy.detail).toContain("YELLOW LINE · Sikanderpur · 9:31 PM · 42 MIN · ₹60 EST.");
+    expect(copy.heading).toBe("FIRST TRANSIT STEP FOUND");
+    expect(copy.detail).toContain("FIRST SCHEDULED STEP · YELLOW LINE · Sikanderpur · DEPARTS 9:31 PM");
     expect(copy.detail).not.toMatch(/metro home|route home/i);
   });
 
@@ -212,7 +212,7 @@ describe("return-state copy", () => {
     const noRoute = buildReturnCopy(leg({ status: "stranded", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
     const unverified = buildReturnCopy(leg({ status: "unverified", costRupees: 420, durationMinutes: 34 }), "9:37 PM");
     expect(noRoute).toMatchObject({
-      heading: "CAB HOME",
+      heading: "CAB ESTIMATE",
       checkedValue: "NO METRO-ONLY CONNECTION HOME",
     });
     expect(noRoute.detail).toContain("NO METRO-ONLY CONNECTION HOME");
@@ -243,9 +243,9 @@ describe("return-state copy", () => {
 
   it("does not claim first-transit detail when live fields are incomplete", () => {
     expect(buildReturnCopy(leg({}), "9:37 PM")).toEqual({
-      heading: "METRO CHECKED",
-      detail: "METRO CHECKED",
-      checkedValue: "METRO CHECKED",
+      heading: "TRANSIT CHECKED",
+      detail: "TRANSIT CHECKED · SCHEDULED STEP DETAILS INCOMPLETE",
+      checkedValue: "TRANSIT CHECKED",
     });
   });
 });
