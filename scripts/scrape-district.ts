@@ -452,6 +452,16 @@ async function main() {
     venues: results,
   };
 
+  // A source-wide outage must not replace the last known good showtimes with an
+  // all-empty snapshot. Besides making the app unhelpful, JSON imports infer
+  // empty arrays as `never[]`, which can make the production TypeScript build
+  // fail. Leave the existing snapshot intact and fail the workflow instead.
+  if (ok === 0) {
+    throw new Error(
+      `District returned no successful venue responses; keeping the existing ${OUTPUT_PATH} unchanged.`
+    );
+  }
+
   await writeFile(OUTPUT_PATH, JSON.stringify(output, null, 2), "utf8");
   console.log(
     `\nWrote ${OUTPUT_PATH} — ${ok} ok, ${failed} failed, ${unresolved} unresolved (of ${venues.length} venues).`

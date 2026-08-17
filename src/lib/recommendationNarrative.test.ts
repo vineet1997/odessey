@@ -160,7 +160,8 @@ describe("format-aware recommendation narrative", () => {
 
   it("covers every current scraper format with an exact profile", () => {
     const labels = new Set<string>();
-    for (const venue of Object.values(showtimesData.venues)) for (const show of venue.showtimes) labels.add(show.format);
+    const liveVenues = showtimesData.venues as Record<string, { showtimes: Array<{ format: string }> }>;
+    for (const venue of Object.values(liveVenues)) for (const show of venue.showtimes) labels.add(show.format);
     for (const label of Object.keys(venuesData.format_scores)) if (label !== "_meta") labels.add(label);
     expect(formatProfileIntegrityIssues([...labels])).toEqual([]);
   });

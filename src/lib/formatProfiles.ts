@@ -95,8 +95,6 @@ export const VENUE_FORMAT_EDITORIALS: Record<string, VenueFormatEditorial> = {
     caveat: "Current screen specification is unverified.",
   },
   "inox-insignia-epicuria|INSIGNIA 2D": { judgment: "Our listed Insignia presentation in Epicuria." },
-  "cinepolis-dlf-avenue-saket|ONYX 2D": { judgment: "Our listed ONYX presentation in Saket." },
-  "devgn-cinex-elan-epic|LASER DOLBY ATMOS 2D": { judgment: "Our listed laser Dolby Atmos presentation in Gurugram." },
   "wave-cinemas-gurugram|RECLINER LASER ATMOS 2D": { judgment: "Our listed recliner laser Atmos presentation in Gurugram." },
   "directors-cut-mall-of-india-noida|DIRECTOR'S CUT 2D": { judgment: "Our listed Director's Cut presentation in Noida." },
   "pvr-cinemagic-pitampura|LUXE 2D": { judgment: "Our listed LUXE seating presentation in Pitampura." },
