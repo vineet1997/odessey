@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generatedAt": "2026-08-17T14:31:17.887Z",
+    "generatedAt": "2026-08-17T15:02:23.407Z",
     "movieTitle": "The Odyssey",
     "source": "district.in (__NEXT_DATA__ embedded session JSON)",
     "timezone": "IST (converted from District's UTC showTime fields)",
@@ -14,105 +14,105 @@
     "priya-vasant-vihar": {
       "venueId": "priya-vasant-vihar",
       "districtUrl": "https://www.district.in/movies/pvr-imax-with-laser-priya-vasant-vihar-new-delhi-in-new-delhi-CD1022246",
-      "fetchedAt": "2026-08-17T14:30:20.344Z",
+      "fetchedAt": "2026-08-17T15:00:23.678Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "select-citywalk-saket": {
       "venueId": "select-citywalk-saket",
       "districtUrl": "https://www.district.in/movies/pvr-select-city-walk-saket-new-delhi-in-delhi-ncr-CD1022254",
-      "fetchedAt": "2026-08-17T14:30:24.406Z",
+      "fetchedAt": "2026-08-17T15:00:29.945Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "mall-of-india-noida": {
       "venueId": "mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-superplex-mall-of-india-sector-18-noida-in-delhi-ncr-CD1024358",
-      "fetchedAt": "2026-08-17T14:30:28.280Z",
+      "fetchedAt": "2026-08-17T15:00:55.745Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "vegas-dwarka": {
       "venueId": "vegas-dwarka",
       "districtUrl": "https://www.district.in/movies/pvr-vegas-dwarka-new-delhi-in-gurgaon-CD1022286",
-      "fetchedAt": "2026-08-17T14:30:32.211Z",
+      "fetchedAt": "2026-08-17T15:01:36.876Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "ambience-gurugram-kotak-imax": {
       "venueId": "ambience-gurugram-kotak-imax",
       "districtUrl": "https://www.district.in/movies/pepsi-pvr-ambience-ambience-mall-gurugram-in-gurgaon-CD1022302",
-      "fetchedAt": "2026-08-17T14:30:36.085Z",
+      "fetchedAt": "2026-08-17T15:01:40.735Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "inox-paras-nehru-place": {
       "venueId": "inox-paras-nehru-place",
       "districtUrl": "https://www.district.in/movies/inox-coca-cola-imax-paras-nehru-place-delhi-in-delhi-ncr-CD1018957",
-      "fetchedAt": "2026-08-17T14:30:39.946Z",
+      "fetchedAt": "2026-08-17T15:01:44.556Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "inox-vishal-mall-rajouri": {
       "venueId": "inox-vishal-mall-rajouri",
       "districtUrl": "https://www.district.in/movies/inox-vishal-mall-rajouri-garden-new-delhi-in-delhi-ncr-CD1018962",
-      "fetchedAt": "2026-08-17T14:30:43.864Z",
+      "fetchedAt": "2026-08-17T15:01:48.374Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "inox-insignia-epicuria": {
       "venueId": "inox-insignia-epicuria",
       "districtUrl": "https://www.district.in/movies/inox-insignia-at-epicuria-nehru-place-new-delhi-in-delhi-ncr-CD1018958",
-      "fetchedAt": "2026-08-17T14:30:47.732Z",
+      "fetchedAt": "2026-08-17T15:01:52.221Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "cinepolis-dlf-avenue-saket": {
       "venueId": "cinepolis-dlf-avenue-saket",
       "districtUrl": "https://www.district.in/movies/cinepolis-dlf-avenue-saket-new-delhi-in-delhi-ncr-CD1390",
-      "fetchedAt": "2026-08-17T14:30:51.588Z",
+      "fetchedAt": "2026-08-17T15:01:56.044Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "devgn-cinex-elan-epic": {
       "venueId": "devgn-cinex-elan-epic",
       "districtUrl": "https://www.district.in/movies/devgn-cinex-formerly-ny-elan-epic-gurugram-in-gurgaon-CD1029765",
-      "fetchedAt": "2026-08-17T14:30:55.443Z",
+      "fetchedAt": "2026-08-17T15:02:00.038Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "wave-cinemas-gurugram": {
       "venueId": "wave-cinemas-gurugram",
       "districtUrl": "https://www.district.in/movies/wave-cinemas-gurugram-in-gurgaon-CD1039102",
-      "fetchedAt": "2026-08-17T14:30:59.302Z",
+      "fetchedAt": "2026-08-17T15:02:04.127Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "directors-cut-mall-of-india-noida": {
       "venueId": "directors-cut-mall-of-india-noida",
       "districtUrl": "https://www.district.in/movies/pvr-directors-cut-dlf-mall-of-india-noida-in-delhi-ncr-CD1058603",
-      "fetchedAt": "2026-08-17T14:31:03.201Z",
+      "fetchedAt": "2026-08-17T15:02:08.190Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "inox-pacific-mall-jasola": {
       "venueId": "inox-pacific-mall-jasola",
       "districtUrl": "https://www.district.in/movies/inox-pacific-mall-jasola-new-delhi-in-delhi-ncr-CD1018963",
-      "fetchedAt": "2026-08-17T14:31:07.063Z",
+      "fetchedAt": "2026-08-17T15:02:12.289Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "pvr-cinemagic-pitampura": {
       "venueId": "pvr-cinemagic-pitampura",
       "districtUrl": "https://www.district.in/movies/pvr-cinemagic-unity-one-elegante-nsp-pitampura-in-delhi-ncr-CD1102047",
-      "fetchedAt": "2026-08-17T14:31:10.923Z",
+      "fetchedAt": "2026-08-17T15:02:16.394Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     },
     "new-us-cinemas-ghaziabad": {
       "venueId": "new-us-cinemas-ghaziabad",
       "districtUrl": "https://www.district.in/movies/new-us-cinemas-aditya-mall-ghaziabad-in-new-delhi-CD25281",
-      "fetchedAt": "2026-08-17T14:31:14.775Z",
+      "fetchedAt": "2026-08-17T15:02:20.339Z",
       "showtimes": [],
       "error": "2026-08-17: HTTP 403 Forbidden; 2026-08-18: HTTP 403 Forbidden; 2026-08-19: HTTP 403 Forbidden; 2026-08-20: HTTP 403 Forbidden; 2026-08-21: HTTP 403 Forbidden"
     }
